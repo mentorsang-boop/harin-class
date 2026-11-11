@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>하린의 첫 직장 한 달 · 수업도구</title>
+<link rel="icon" href="assets/logo-blue.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --navy:#1B2D5B; --navy-2:#1E3A8A; --orange:#F59E0B; --orange-d:#B45309; --blue:#2563EB; --blue-d:#1D4ED8;
+  --blue-l:#DBEAFE; --blue-b:#BFDBFE; --yel-l:#FEF3C7; --yel-b:#FDE68A; --ink:#1F2937; --muted:#6B7280; --line:#E5E7EB;
+  --bg:#F3F4F6; --paper:#ffffff; --ok:#15803D; --ok-l:#DCFCE7; --no:#B91C1C; --no-l:#FEE2E2;
+  --g1:#F59E0B; --g2:#2563EB; --g3:#1B2D5B; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+textarea,input{font:inherit}
+.topbar{background:var(--navy);color:#fff}
+.topbar .in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;justify-content:space-between}
+.topbar img{height:34px;display:block}
+.topbar .title{font-weight:900;font-size:18px;letter-spacing:-.02em}
+.topbar .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 60px}
+.net{font-size:12px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.15);color:#fff;white-space:nowrap}
+.net.live{background:#DCFCE7;color:var(--ok)}
+.net.local{background:var(--yel-l);color:var(--orange-d)}
+.pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px}
+.pill .t{font-variant-numeric:tabular-nums;font-size:16px;color:var(--orange)}
+.who-pill{font-size:13px;opacity:.9}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+h1,h2,h3{letter-spacing:-.02em;margin:0}
+.muted{color:var(--muted)}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;background:var(--navy);color:#fff}
+.btn:hover{background:var(--navy-2)}
+.btn.ghost{background:transparent;color:var(--navy);border:1.5px solid var(--navy)}
+.btn.ghost:hover{background:var(--blue-l)}
+.btn.light{background:rgba(255,255,255,.15);color:#fff}
+.btn.orange{background:var(--orange);color:#1F2937}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* login */
+.login{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+.login .left{background:var(--navy);color:#fff;padding:56px 56px 56px 72px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:26px;justify-content:center}
+.login .left::before{content:"";position:absolute;left:0;top:0;bottom:0;width:18px;background:var(--orange)}
+.login .left::after{content:"";position:absolute;right:-120px;top:-120px;width:320px;height:320px;border-radius:50%;background:var(--navy-2)}
+.login .left img{width:300px;max-width:80%}
+.login .kick{color:var(--orange);font-weight:700;font-size:18px}
+.login h1{font-size:52px;line-height:1.15;font-weight:900}
+.login h1 span{color:var(--orange)}
+.login .left p{color:#D1D5DB;line-height:1.7;font-size:16px;max-width:520px}
+.login .right{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:var(--paper)}
+.lbox{width:100%;max-width:420px;display:grid;gap:16px}
+.lbox h2{font-size:24px;color:var(--navy)}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:14px;text-align:left;font-weight:700}
+.role .dot{width:30px;height:30px;border-radius:9px;color:#fff;display:grid;place-items:center;font-weight:900;flex:none}
+.role.sel{border-color:var(--navy);background:var(--blue-l)}
+.lbox label{font-size:13px;font-weight:700;color:var(--muted)}
+.lbox input{border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-size:17px;width:100%}
+.err{background:var(--no-l);color:var(--no);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700}
+.note{font-size:13.5px;color:var(--muted);line-height:1.6}
+/* group */
+.ghead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.gtitle{display:flex;align-items:center;gap:12px}
+.badge{color:#fff;font-weight:900;border-radius:10px;padding:6px 10px;font-size:14px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.steps button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;font-weight:700;color:var(--muted);font-size:14px}
+.steps button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.steps button.done::after{content:" ✓";color:var(--ok)}
+.steps button.on.done::after{color:#BBF7D0}
+.scene-tag{display:inline-block;background:var(--yel-l);color:var(--orange-d);font-weight:900;border-radius:8px;padding:4px 10px;font-size:13px}
+.story{font-size:19px;line-height:1.85;margin:14px 0 0}
+.story q{quotes:"“" "”";background:var(--yel-l);padding:1px 4px;border-radius:4px}
+.who{display:flex;gap:16px;align-items:center;margin-top:18px;padding:14px;border-radius:12px;background:var(--blue-l)}
+.who svg{flex:none}
+.q-lead{font-size:17px;font-weight:700;margin:0 0 12px}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:14px;background:var(--paper);text-align:left;width:100%;font-size:16px;line-height:1.55}
+.opt .box{width:24px;height:24px;border-radius:7px;border:2px solid #CBD5E1;flex:none;display:grid;place-items:center;margin-top:1px}
+.opt.sel{border-color:var(--navy);background:var(--blue-l)}
+.opt.sel .box{background:var(--navy);border-color:var(--navy)}
+.opt.sel .box::after{content:"";width:10px;height:6px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.opt.right{border-color:var(--ok);background:var(--ok-l)}
+.opt.wrong{border-color:var(--no);background:var(--no-l)}
+.opt .why{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}
+.evs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.ev{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper);text-align:left}
+.ev b{display:block;font-size:15.5px}
+.ev small{display:block;color:var(--muted);margin-top:4px;line-height:1.5}
+.ev .law{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--blue-d);background:var(--blue-l);border-radius:6px;padding:2px 7px}
+.ev.sel{border-color:var(--navy);background:var(--blue-l);box-shadow:inset 0 0 0 1px var(--navy)}
+.ev.right{border-color:var(--ok);background:var(--ok-l)}
+.ev.wrong{border-color:var(--no);background:var(--no-l)}
+textarea{width:100%;min-height:120px;border:1.5px solid var(--line);border-radius:12px;padding:14px;font-size:17px;line-height:1.6;resize:vertical;background:#fff}
+textarea:focus,input:focus{outline:2px solid var(--orange);border-color:var(--navy)}
+.helps{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;font-weight:500;font-size:14.5px}
+.chip.sel{background:var(--navy);border-color:var(--navy);color:#fff}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.space{flex:1}
+.ok-banner{background:var(--ok-l);color:var(--ok);border-radius:12px;padding:12px 14px;font-weight:700;margin-top:12px}
+.explain{background:var(--yel-l);border-left:6px solid var(--orange);border-radius:12px;padding:14px;margin-top:14px;line-height:1.7}
+.explain h3{font-size:16px;margin-bottom:6px;color:var(--navy)}
+.quiz-q{margin-bottom:18px}
+.quiz-q h3{font-size:17px;margin-bottom:10px;line-height:1.5}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qopt{border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:12px;text-align:left;font-size:15.5px}
+.qopt.sel{border-color:var(--navy);background:var(--blue-l);font-weight:700}
+.qopt.right{border-color:var(--ok);background:var(--ok-l)}
+.qopt.wrong{border-color:var(--no);background:var(--no-l)}
+.cardform{display:grid;gap:14px}
+.rc{border:1px solid var(--line);border-top:6px solid var(--orange);border-radius:12px;padding:14px;background:#fff;display:grid;gap:8px}
+.rc input{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;width:100%;background:#fff}
+.rc label{font-size:13px;font-weight:700;color:var(--muted)}
+/* teacher */
+.phases{display:flex;gap:6px;flex-wrap:wrap}
+.ph{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--muted);font-weight:700}
+.ph.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ph.past{background:var(--bg)}
+.tbar{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;margin-bottom:16px}
+.bigtime{font-size:56px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--navy);line-height:1}
+.bigtime.warn{color:var(--orange)}
+.tcols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.gcol{border-top:6px solid var(--g1)}
+.gcol h3{font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gcol .stat{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--bg);color:var(--muted)}
+.gcol .stat.sub{background:var(--ok-l);color:var(--ok)}
+.mini{font-size:14.5px;line-height:1.55;margin:10px 0 0;padding-left:18px}
+.mini li{margin-bottom:4px}
+.mini .r{color:var(--ok);font-weight:700}
+.mini .w{color:var(--no);font-weight:700}
+.line-quote{background:var(--blue-l);border-left:4px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:15px;line-height:1.6;margin-top:10px;white-space:pre-wrap}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:12.5px;border-radius:6px;padding:3px 8px;background:var(--bg);color:var(--navy);font-weight:700}
+.tag.r{background:var(--ok-l);color:var(--ok)}
+.tag.w{background:var(--no-l);color:var(--no)}
+.section-h{display:flex;align-items:center;gap:10px;margin:22px 0 10px}
+.section-h::before{content:"";width:6px;height:22px;background:var(--orange);border-radius:3px}
+.section-h h2{font-size:19px;color:var(--navy)}
+table.qt{width:100%;border-collapse:collapse;font-size:15px}
+table.qt th{background:var(--navy);color:#fff}
+table.qt th,table.qt td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:center}
+table.qt th:first-child,table.qt td:first-child{text-align:left}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.rcard{background:#fff;border:1px solid var(--yel-b);border-top:5px solid var(--orange);border-radius:12px;padding:12px 14px;line-height:1.55}
+.rcard b{color:var(--navy)}
+.ov{position:fixed;inset:0;background:rgba(27,45,91,.6);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+.ov.on{display:flex}
+.ov .panel{background:var(--paper);border-radius:18px;max-width:1000px;width:100%;max-height:92vh;overflow:auto;padding:30px}
+.ov .panel h2{font-size:28px;margin-bottom:6px;color:var(--navy)}
+.present .story{font-size:22px}
+.present .line-quote{font-size:22px}
+.present .tag{font-size:15px}
+.present .mini{font-size:19px}
+.confirm .panel{max-width:440px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+.toast.on{opacity:1}
+.foot{display:flex;align-items:center;gap:10px;margin-top:28px;color:var(--muted);font-size:12.5px}
+.foot img{height:22px}
+@media (max-width:860px){.login{grid-template-columns:1fr}.login .left{padding:40px 28px 40px 44px}.login h1{font-size:38px}.tcols{grid-template-columns:1fr}.tbar{grid-template-columns:1fr}.qopts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="ov present" id="present"><div class="panel" id="presentBody"></div></div>
+<div class="ov confirm" id="confirm"><div class="panel">
+  <h2 style="font-size:20px">모든 모둠 기록을 지울까요?</h2>
+  <p class="muted" style="line-height:1.6">세 모둠의 판단·근거·대사·퀴즈·권리 카드와 타이머가 처음 상태로 돌아갑니다. 리허설 뒤 본수업 전에 사용하세요.</p>
+  <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" id="cfNo">취소</button><button class="btn orange" id="cfYes">모두 지우기</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================== lesson data */
+const PHASES=[{n:"도입",m:5},{n:"안내",m:5},{n:"모둠 활동",m:18},{n:"공유",m:12},{n:"정리",m:10}];
+const GROUP_COLORS={g1:"var(--g1)",g2:"var(--g2)",g3:"var(--g3)"};
+const EVIDENCE=[
+ {id:"e1",t:"근로계약서 서면 교부",d:"임금·근로시간·휴일·연차 등을 적은 계약서를 써서 노동자에게 한 부 줘야 함",law:"근로기준법 제17조"},
+ {id:"e2",t:"최저임금",d:"2027년 최저임금은 시급 10,700원. 이보다 적게 줄 수 없음",law:"최저임금법 제6조"},
+ {id:"e3",t:"법정 근로시간",d:"1일 8시간·1주 40시간. 합의해도 연장근로는 1주 12시간까지",law:"근로기준법 제50·53조"},
+ {id:"e4",t:"휴게시간",d:"4시간 일하면 30분, 8시간 일하면 1시간 이상 쉬는 시간을 줘야 함",law:"근로기준법 제54조"},
+ {id:"e5",t:"연장·야간·휴일 가산수당",d:"연장근로, 밤 10시~새벽 6시 야간근로, 휴일근로는 통상임금의 50% 이상을 더 줘야 함",law:"근로기준법 제56조"},
+ {id:"e6",t:"직장 내 괴롭힘 금지",d:"지위·관계의 우위를 이용해 업무 범위를 넘어 고통을 주면 안 됨. 신고하면 조사·조치해야 하고 신고자에게 불리한 처우 금지",law:"근로기준법 제76조의2·3"},
+ {id:"e7",t:"작업중지권",d:"다칠 급박한 위험이 있으면 작업을 멈추고 대피할 수 있음. 이를 이유로 불이익을 주면 안 됨",law:"산업안전보건법 제52조"},
+ {id:"e8",t:"사업주의 안전조치 의무",d:"기계·기구 등 위험을 막기 위한 안전조치를 해야 함",law:"산업안전보건법 제38조"}
+];
+const HELPS=[
+ {id:"h1",t:"사장님·점장님께 직접 말하기"},
+ {id:"h2",t:"기록 남기기 (메모·사진·캡처)"},
+ {id:"h3",t:"학교 취업부 선생님께 상담"},
+ {id:"h4",t:"고용노동부 1350 상담"},
+ {id:"h5",t:"지방고용노동관서에 진정·신고"}
+];
+const SCENES={
+ g1:{tag:"장면 1 · 첫 주",title:"“계약서는 다음 주에”",topic:"근로계약 · 최저임금",
+  story:"2027년 3월, 하린은 ○○베이커리(직원 8명)에 신입 제빵사로 입사했다. 첫날 사장님이 유니폼과 위생모를 건네며 말했다. <q>계약서는 요즘 바빠서 다음 주에 쓰자. 우리 사이에 뭘. 시급은 처음이니까 10,000원부터 시작하고, 잘하면 올려줄게.</q> 첫날에는 선배와 함께 위생교육을 받았다. 그렇게 3주가 지났지만 계약서 이야기는 다시 나오지 않았다.",
+  items:[
+   {id:"a",t:"첫날 사장님이 유니폼과 위생모를 줬다",p:false,why:"작업에 필요한 물품 지급은 문제가 아님"},
+   {id:"b",t:"계약서를 “다음 주에” 쓰자고 하고 3주째 쓰지 않았다",p:true,why:"근로계약을 맺을 때 계약서를 써서 한 부 줘야 함"},
+   {id:"c",t:"시급을 10,000원으로 정했다",p:true,why:"2027년 최저임금 10,700원보다 적음"},
+   {id:"d",t:"첫날 선배와 함께 위생교육을 받았다",p:false,why:"식품을 다루는 일터의 필요한 교육임"}
+  ],
+  ev:["e1","e2"],
+  model:"사장님, 일 시작하기 전에 근로계약서를 쓰고 한 부 받고 싶어요. 올해 최저임금이 10,700원이라 시급도 함께 확인하고 싶습니다.",
+  point:"계약서는 ‘나중에’가 아니라 일을 시작할 때 받는 것. 임금·시간·휴일이 적힌 종이 한 장이 나를 지켜준다."},
+ g2:{tag:"장면 2 · 2~3주차",title:"“빵집은 원래 그래”",topic:"근로시간 · 휴게 · 가산수당",
+  story:"하린은 오픈조로 새벽 5시에 출근해 오후 3시에 퇴근한다. 바쁜 날이 이어져 점심은 작업대 옆에 서서 빵 한 조각으로 때운다. 주말 행사 때문에 토요일에도 출근해 주 6일을 일했다. 근무표는 매주 단톡방에 미리 공지된다. 첫 급여명세서에는 기본급만 있고 추가 근무 수당은 없었다. 선배는 <q>빵집은 원래 다 이래</q>라고 말했다.",
+  items:[
+   {id:"a",t:"오픈조라서 새벽 5시에 출근했다",p:false,why:"오픈 근무 자체는 문제가 아님. 다만 새벽 5~6시는 야간근로라 가산수당 대상"},
+   {id:"b",t:"하루 10시간씩, 주 6일(주 60시간) 일했다",p:true,why:"1일 8시간·1주 40시간을 넘고, 연장근로 한도 주 12시간도 넘음"},
+   {id:"c",t:"점심을 서서 빵 한 조각으로 때웠다",p:true,why:"8시간 이상 일하면 1시간 이상 휴게시간을 줘야 함"},
+   {id:"d",t:"근무표가 단톡방에 미리 공지됐다",p:false,why:"근무 일정을 미리 알려주는 것은 문제가 아님"},
+   {id:"e",t:"급여명세서에 연장·야간 수당이 없었다",p:true,why:"연장·야간근로는 통상임금의 50% 이상을 더 줘야 함 (직원 5명 이상)"}
+  ],
+  ev:["e3","e4","e5"],
+  model:"사장님, 제가 일한 시간을 정리해 봤는데 연장·야간 근무분이 명세서에 없어서 확인 부탁드려요. 그리고 쉬는 시간도 정해 주셨으면 합니다.",
+  point:"‘원래 그렇다’는 법이 아니다. 출퇴근 시간을 매일 기록해 두면 내 시간을 증명할 수 있다."},
+ g3:{tag:"장면 3 · 4주차",title:"“센서 고장 났으니까 그냥 돌려”",topic:"직장 내 괴롭힘 · 산업안전",
+  story:"선배 제빵사가 반죽 온도를 다시 재라고 정확하게 지적했다. 그런데 같은 선배가 다른 직원들 앞에서 매일 <q>신입이 뭘 안다고</q>라며 큰 소리로 말하고, 단톡방에 하린의 실수 사진을 올려 놀렸다. 바쁜 금요일, 점장이 지시했다. <q>믹서 덮개 안전센서가 고장 났어. 덮개 열고 돌리면서 반죽 봐. 빨리!</q> 오늘은 주문이 많아 모두 속도를 높이자는 분위기다.",
+  items:[
+   {id:"a",t:"선배가 반죽 온도를 다시 재라고 정확히 지적했다",p:false,why:"업무에 필요한 적정한 지적은 괴롭힘이 아님"},
+   {id:"b",t:"다른 직원 앞에서 매일 “신입이 뭘 안다고”라고 큰 소리로 말했다",p:true,why:"업무 범위를 넘어 반복적으로 모욕을 주는 직장 내 괴롭힘"},
+   {id:"c",t:"단톡방에 하린의 실수 사진을 올려 놀렸다",p:true,why:"공개적인 조롱도 직장 내 괴롭힘"},
+   {id:"d",t:"안전센서가 고장 난 믹서를 덮개를 열고 돌리라고 지시했다",p:true,why:"안전장치가 없는 기계 작업은 다칠 급박한 위험. 작업을 멈출 수 있음"},
+   {id:"e",t:"주문이 많은 날이라 작업 속도를 높이자고 했다",p:false,why:"바쁜 날 속도를 내자는 것 자체는 문제가 아님"}
+  ],
+  ev:["e6","e7","e8"],
+  model:"점장님, 센서가 고쳐질 때까지 이 작업은 위험해서 멈추겠습니다. 그리고 선배의 말과 단톡방 일은 날짜별로 기록해 두었는데, 사장님께 말씀드리고 싶어요.",
+  point:"정확한 업무 지적과 괴롭힘은 다르다. 다칠 것 같으면 먼저 멈추는 것이 권리다."}
+};
+const QUIZ=[
+ {q:"2027년 최저임금 시급은 얼마일까?",o:["10,320원","10,700원","11,000원","12,000원"],a:1,ex:"2027년 1월 1일부터 시급 10,700원. 10,320원은 2026년 최저임금."},
+ {q:"근로계약서는 언제 받아야 할까?",o:["첫 월급날","수습이 끝난 뒤","근로계약을 맺을 때 (일 시작 전)","내가 요청할 때만"],a:2,ex:"근로계약을 맺을 때 임금·근로시간·휴일 등을 적어 서면으로 줘야 함."},
+ {q:"하루 8시간 일할 때 휴게시간은 최소 얼마?",o:["없어도 된다","30분","1시간","1시간 30분"],a:2,ex:"4시간에 30분, 8시간에 1시간 이상."},
+ {q:"다음 중 직장 내 괴롭힘으로 보기 어려운 것은?",o:["다른 직원 앞에서 반복해서 모욕하기","단톡방에 실수 사진 올려 놀리기","업무에 필요한 내용을 정확히 지적하기","일부러 업무에서 계속 빼기"],a:2,ex:"업무상 적정한 범위의 지적은 괴롭힘이 아님. 범위를 넘는 모욕·따돌림이 괴롭힘."},
+ {q:"안전장치가 고장 난 기계를 그냥 쓰라고 할 때 가장 먼저 할 일은?",o:["빨리 끝내고 나중에 말한다","작업을 멈추고 관리자에게 보고한다","선배에게 대신 하라고 한다","조심해서 그냥 사용한다"],a:1,ex:"급박한 위험이 있으면 작업을 멈추고 대피할 수 있고, 이를 이유로 불이익을 주면 안 됨 (산업안전보건법 제52조)."}
+];
+const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",right:"",how:""},{name:"",right:"",how:""},{name:"",right:"",how:""}]});
+const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
+const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"}];
+
+/* ================================================================== backend */
+const CFG=window.HARIN_CONFIG||{};
+const DEMO=!CFG.SUPABASE_URL||CFG.SUPABASE_URL.includes("YOUR-PROJECT");
+const sb=DEMO?null:window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,storageKey:"harin-class-auth"}});
+const S={user:null,role:null,control:blankControl(),groups:{g1:blankGroup(),g2:blankGroup(),g3:blankGroup()},net:"init",channel:null};
+const LS_KEY="harin-class-demo-v1";
+function loadDemo(){try{const j=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(j){S.control=Object.assign(blankControl(),j.control||{});for(const g of["g1","g2","g3"])S.groups[g]=Object.assign(blankGroup(),(j.groups||{})[g]||{})}}catch(e){}}
+function saveDemo(){try{localStorage.setItem(LS_KEY,JSON.stringify({control:S.control,groups:S.groups}))}catch(e){}}
+const roleOf=email=>(email||"").split("@")[0];
+
+async function login(roleId,pw){
+  if(DEMO){S.user={email:roleId+"@demo"};S.role=roleId;loadDemo();S.net="local";return null}
+  const {data,error}=await sb.auth.signInWithPassword({email:roleId+"@"+(CFG.EMAIL_DOMAIN||"harin.example.com"),password:pw});
+  if(error)return error;
+  S.user=data.user;S.role=roleOf(data.user.email);
+  await startSync();return null;
+}
+async function logout(){if(!DEMO){try{if(S.channel)sb.removeChannel(S.channel);await sb.auth.signOut()}catch(e){}}S.user=null;S.role=null;location.hash="";render()}
+function applyRow(row){
+  if(!row)return;
+  if(row.id==="control")S.control=Object.assign(blankControl(),row.data||{});
+  else if(S.groups[row.id]){
+    if(S.role===row.id&&pending[row.id])return; // 내 기기에서 쓰는 중이면 덮어쓰지 않음
+    S.groups[row.id]=Object.assign(blankGroup(),row.data||{});
+  }
+}
+async function startSync(){
+  S.net="init";setNet();
+  const {data,error}=await sb.from("lesson_state").select("id,data");
+  if(error){S.net="error";setNet();toast("기록을 불러오지 못했어요: "+error.message);return}
+  data.forEach(applyRow);
+  S.channel=sb.channel("lesson_state_changes")
+    .on("postgres_changes",{event:"*",schema:"public",table:"lesson_state"},p=>{applyRow(p.new);render(true)})
+    .subscribe(st=>{S.net=st==="SUBSCRIBED"?"live":(st==="CLOSED"||st==="CHANNEL_ERROR"||st==="TIMED_OUT")?"error":S.net;setNet()});
+  render();
+}
+const pending={},timers={};
+function save(id,delay){
+  if(DEMO){saveDemo();return}
+  pending[id]=true;clearTimeout(timers[id]);
+  timers[id]=setTimeout(async()=>{
+    const data=id==="control"?S.control:S.groups[id];
+    const {error}=await sb.from("lesson_state").update({data:JSON.parse(JSON.stringify(data)),updated_at:new Date().toISOString()}).eq("id",id);
+    pending[id]=false;
+    if(error){toast("저장하지 못했어요: "+error.message)}
+  },delay==null?500:delay);
+}
+async function resume(){
+  if(DEMO)return;
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session){S.user=data.session.user;S.role=roleOf(S.user.email);await startSync()}
+}
+
+/* ================================================================== helpers */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("on"),2800)}
+function remainingMs(){const c=S.control;return c.running?Math.max(0,c.endsAt-Date.now()):Math.max(0,c.remaining)}
+const fmt=ms=>{const s=Math.ceil(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
+function quizScore(gs){return gs.quiz.reduce((a,v,i)=>a+(v===QUIZ[i].a?1:0),0)}
+function setNet(){
+  const n=$("#net");if(!n)return;
+  if(DEMO){n.className="net local";n.textContent="체험 모드 · 이 기기에만 저장";return}
+  n.className="net "+(S.net==="live"?"live":S.net==="error"?"local":"");
+  n.textContent=S.net==="live"?"실시간 공유 중":S.net==="error"?"연결 끊김 · 다시 시도 중":"연결 중…";
+}
+
+/* ================================================================== render */
+let VIEW={step:0};
+function render(fromData){
+  const root=$("#root");
+  if(!S.user){root.innerHTML=loginHTML();bindLogin();return}
+  if(fromData){
+    const a=document.activeElement;
+    if(a&&(a.tagName==="TEXTAREA"||a.tagName==="INPUT")&&root.contains(a)){tick();return}
+  }
+  const isT=S.role==="teacher";
+  root.innerHTML=`<header class="topbar"><div class="in">
+      <div class="row"><img src="assets/logo-white.png" alt="인천산업정보학교"><span class="title">하린의 첫 직장 한 달</span></div>
+      <div class="right"><span class="pill"><span id="phaseName">${PHASES[S.control.phase].n}</span><span class="t" id="timerSmall">${fmt(remainingMs())}</span></span>
+      <span class="net" id="net"></span><span class="who-pill">${isT?"교사":esc(S.role.slice(1))+"모둠"}</span><button class="btn sm light" id="logout">로그아웃</button></div></div></header>
+    <main class="wrap">${isT?teacherHTML():groupHTML(S.role)}
+      <div class="foot"><img src="assets/logo-blue.png" alt="">노동인권교육 · 제빵 수업 연계</div></main>`;
+  $("#logout").onclick=logout;setNet();
+  if(isT){bindTeacher();if($("#present").classList.contains("on")&&presentG)openPresent(presentG)}else bindGroup(S.role);
+  tick();
+}
+
+let loginRole="g1";
+function loginHTML(){
+  return `<div class="login"><section class="left">
+      <img src="assets/logo-white.png" alt="인천산업정보학교">
+      <div class="kick">제빵 수업 연계 노동인권교육</div>
+      <h1>하린의<br><span>첫 직장 한 달</span></h1>
+      <p>신입 제빵사 하린의 한 달을 따라가며 <b>판단 → 근거 → 행동</b> 순서로 하린을 도와주세요. 우리 모둠 계정으로 로그인하면 모둠 화면이 열립니다.</p>
+    </section><section class="right"><form class="lbox" id="lform" autocomplete="on">
+      <h2>로그인</h2>
+      <div class="roles">${ROLES.map(r=>`<button type="button" class="role ${r.id===loginRole?"sel":""}" data-role="${r.id}"><span class="dot" style="background:${r.c}">${r.k}</span>${r.n}</button>`).join("")}</div>
+      <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password" placeholder="선생님이 알려준 비밀번호" ${DEMO?'value="demo"':""}></div>
+      <div id="lerr"></div>
+      <button class="btn" type="submit" style="padding:14px">들어가기</button>
+      <p class="note">${DEMO?"지금은 체험 모드입니다. 비밀번호 없이 들어가며, 기록은 이 기기에만 저장됩니다.":"아이디는 고를 필요 없이 모둠 버튼만 누르면 됩니다. 비밀번호는 모둠 책상의 안내 카드를 보세요."}</p>
+    </form></section></div>`;
+}
+function bindLogin(){
+  document.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{loginRole=b.dataset.role;document.querySelectorAll("[data-role]").forEach(x=>x.classList.toggle("sel",x===b));$("#pw").focus()});
+  $("#lform").onsubmit=async e=>{
+    e.preventDefault();const btn=e.submitter||$("#lform button[type=submit]");btn.disabled=true;btn.textContent="확인 중…";
+    const err=await login(loginRole,$("#pw").value);
+    if(err){$("#lerr").innerHTML=`<div class="err">비밀번호가 맞지 않아요. 모둠 버튼과 비밀번호를 다시 확인해 주세요.</div>`;btn.disabled=false;btn.textContent="들어가기";return}
+    VIEW={step:0};render();
+  };
+}
+
+const STEPS=["장면 읽기","① 판단","② 근거","③ 행동","출구 퀴즈","나의 권리 카드"];
+function stepDone(g,i){const gs=S.groups[g];return [true,gs.sel.length>0,gs.ev.length>0,gs.submitted,gs.quizDone,gs.cards.some(c=>c.right.trim())][i]&&i>0}
+function harinSVG(){return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#fff"/><path d="M16 26c0-10 7-16 16-16s16 6 16 16v4H16z" fill="#fff" stroke="#1B2D5B" stroke-width="2"/><rect x="18" y="24" width="28" height="6" rx="3" fill="#fff" stroke="#1B2D5B" stroke-width="2"/><circle cx="32" cy="38" r="11" fill="#f6d2b4"/><circle cx="28" cy="37" r="1.6" fill="#1F2937"/><circle cx="36" cy="37" r="1.6" fill="#1F2937"/><path d="M29 42q3 2 6 0" stroke="#1F2937" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M20 62c1-8 6-12 12-12s11 4 12 12" fill="#fff" stroke="#F59E0B" stroke-width="2"/></svg>`}
+
+function groupHTML(g){
+  const sc=SCENES[g],gs=S.groups[g],rev=S.control.reveal,step=VIEW.step||0,num=g.slice(1);
+  let body="";
+  if(step===0){
+    body=`<div class="card"><span class="scene-tag">${sc.tag} · ${esc(sc.topic)}</span>
+      <h2 style="margin-top:10px;font-size:24px;color:var(--navy)">${sc.title}</h2>
+      <p class="story">${sc.story}</p>
+      <div class="who">${harinSVG()}<div><b>모둠 역할 나누기</b><div class="note" style="margin-top:4px">판단자: 문제 상황을 고르는 사람 · 근거 탐색자: 근거 카드를 찾는 사람 · 대변인: 하린의 대사를 쓰고 발표하는 사람</div></div></div>
+      <div class="row" style="margin-top:16px"><span class="space"></span><button class="btn" data-step="1">판단하러 가기 →</button></div></div>`;
+  }else if(step===1){
+    body=`<div class="card"><p class="q-lead">하린에게 일어난 일 중 <u>노동인권 문제</u>라고 생각하는 것을 모두 고르세요.</p>
+      <p class="note" style="margin:-4px 0 12px">문제가 아닌 것도 섞여 있어요. 왜 그렇게 판단했는지 모둠에서 이야기해 보세요.</p>
+      <div class="opts">${sc.items.map(it=>{const on=gs.sel.includes(it.id);let cls=on?"sel":"";let why="";
+        if(rev){cls+=(on===it.p)?" right":" wrong";why=`<span class="why">${it.p?"문제 상황":"문제가 아님"} — ${esc(it.why)}</span>`}
+        return `<button class="opt ${cls}" data-sel="${it.id}"><span class="box"></span><span>${esc(it.t)}${why}</span></button>`}).join("")}</div>
+      <div class="row" style="margin-top:16px"><button class="btn ghost" data-step="0">← 장면</button><span class="space"></span><button class="btn" data-step="2">근거 찾기 →</button></div></div>`;
+  }else if(step===2){
+    body=`<div class="card"><p class="q-lead">고른 문제 상황의 근거가 되는 법·권리 카드를 고르세요.</p>
+      <div class="evs">${EVIDENCE.map(e=>{const on=gs.ev.includes(e.id);let cls=on?"sel":"";if(rev&&on)cls+=sc.ev.includes(e.id)?" right":" wrong";if(rev&&!on&&sc.ev.includes(e.id))cls+=" right";
+        return `<button class="ev ${cls}" data-ev="${e.id}"><b>${esc(e.t)}</b><small>${esc(e.d)}</small><span class="law">${esc(e.law)}</span></button>`}).join("")}</div>
+      <div class="row" style="margin-top:16px"><button class="btn ghost" data-step="1">← 판단</button><span class="space"></span><button class="btn" data-step="3">행동 정하기 →</button></div></div>`;
+  }else if(step===3){
+    body=`<div class="card"><p class="q-lead">하린이라면 누구에게, 어떻게 말할까요? 하린의 대사를 써 주세요.</p>
+      <textarea id="line" placeholder="예) 사장님, ○○에 대해 확인하고 싶은 게 있어요. ...">${esc(gs.line)}</textarea>
+      <p class="q-lead" style="margin-top:16px">함께 쓸 수 있는 도움 경로를 고르세요.</p>
+      <div class="helps">${HELPS.map(h=>`<button class="chip ${gs.help.includes(h.id)?"sel":""}" data-help="${h.id}">${esc(h.t)}</button>`).join("")}</div>
+      <div class="row" style="margin-top:18px"><button class="btn ghost" data-step="2">← 근거</button><span class="space"></span>
+      ${gs.submitted?`<button class="btn ghost" id="unsubmit">수정하기</button>`:""}<button class="btn orange" id="submit" ${gs.submitted?"disabled":""}>${gs.submitted?"제출 완료":"진행판에 제출하기"}</button></div>
+      ${gs.submitted?`<div class="ok-banner">제출했어요! 선생님 화면에 우리 모둠 결과가 올라갔습니다.</div>`:""}
+      ${rev?`<div class="explain"><h3>이렇게 말할 수도 있어요</h3>“${esc(sc.model)}”<br><br><b>핵심:</b> ${esc(sc.point)}</div>`:""}</div>`;
+  }else if(step===4){
+    body=`<div class="card"><p class="q-lead">출구 퀴즈 — 모둠이 함께 풀어요 (5문항)</p>
+      ${QUIZ.map((q,i)=>`<div class="quiz-q"><h3>Q${i+1}. ${esc(q.q)}</h3><div class="qopts">${q.o.map((o,j)=>{let cls=gs.quiz[i]===j?"sel":"";if(gs.quizDone){if(j===q.a)cls+=" right";else if(gs.quiz[i]===j)cls+=" wrong"}
+        return `<button class="qopt ${cls}" data-q="${i}" data-o="${j}" ${gs.quizDone?"disabled":""}>${esc(o)}</button>`}).join("")}</div>
+        ${gs.quizDone?`<p class="note" style="margin-top:8px">${esc(q.ex)}</p>`:""}</div>`).join("")}
+      <div class="row">${gs.quizDone?`<b style="font-size:18px">${quizScore(gs)} / 5 정답</b>`:""}<span class="space"></span>
+      ${gs.quizDone?"":`<button class="btn orange" id="qsubmit" ${gs.quiz.some(v=>v===null)?"disabled":""}>채점하기</button>`}</div></div>`;
+  }else if(step===5){
+    body=`<div class="card"><p class="q-lead">나의 권리 카드 — 한 사람씩, 내년 봄 꼭 기억할 것 하나</p>
+      <div class="cardform">${gs.cards.map((c,i)=>`<div class="rc"><label>이름</label><input data-card="${i}" data-f="name" value="${esc(c.name)}" placeholder="이름">
+        <label>내가 꼭 기억할 권리</label><input data-card="${i}" data-f="right" value="${esc(c.right)}" placeholder="예) 근로계약서는 일 시작 전에 받는다">
+        <label>그런 일이 생기면 나는</label><input data-card="${i}" data-f="how" value="${esc(c.how)}" placeholder="예) 기록을 남기고 1350에 상담한다"></div>`).join("")}</div>
+      <p class="note" style="margin-top:10px">입력하면 자동으로 저장되고 선생님 화면에 나타납니다.</p></div>`;
+  }
+  return `<div class="ghead"><div class="gtitle"><span class="badge" style="background:${GROUP_COLORS[g]}">${num}모둠</span><h2 style="font-size:20px;color:var(--navy)">${sc.tag} · ${sc.title}</h2></div></div>
+   <nav class="steps">${STEPS.map((s,i)=>`<button class="${i===step?"on":""} ${stepDone(g,i)?"done":""}" data-step="${i}">${s}</button>`).join("")}</nav>${body}`;
+}
+function bindGroup(g){
+  const gs=S.groups[g];
+  const touch=()=>save(g);
+  document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{VIEW.step=+b.dataset.step;render();window.scrollTo({top:0,behavior:"smooth"})});
+  document.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{const id=b.dataset.sel;gs.sel=gs.sel.includes(id)?gs.sel.filter(x=>x!==id):[...gs.sel,id];touch();render()});
+  document.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>{const id=b.dataset.ev;gs.ev=gs.ev.includes(id)?gs.ev.filter(x=>x!==id):[...gs.ev,id];touch();render()});
+  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{const id=b.dataset.help;gs.help=gs.help.includes(id)?gs.help.filter(x=>x!==id):[...gs.help,id];touch();render()});
+  const ta=$("#line");if(ta)ta.oninput=()=>{gs.line=ta.value;touch()};
+  const sbm=$("#submit");if(sbm)sbm.onclick=()=>{if(!gs.line.trim()){toast("하린의 대사를 먼저 써 주세요");return}gs.submitted=true;touch();render();toast("제출했어요")};
+  const us=$("#unsubmit");if(us)us.onclick=()=>{gs.submitted=false;touch();render()};
+  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{gs.quiz[+b.dataset.q]=+b.dataset.o;touch();render()});
+  const qs=$("#qsubmit");if(qs)qs.onclick=()=>{gs.quizDone=true;touch();render()};
+  document.querySelectorAll("[data-card]").forEach(inp=>inp.oninput=()=>{gs.cards[+inp.dataset.card][inp.dataset.f]=inp.value;touch()});
+}
+
+/* ================================================================== teacher */
+let presentG=null;
+function groupSummary(g){
+  const sc=SCENES[g],gs=S.groups[g],rev=S.control.reveal;
+  const picked=sc.items.filter(it=>gs.sel.includes(it.id));
+  const missed=sc.items.filter(it=>it.p&&!gs.sel.includes(it.id));
+  return `<ul class="mini">${picked.length?picked.map(it=>`<li>${rev?(it.p?'<span class="r">✓</span> ':'<span class="w">✗</span> '):""}${esc(it.t)}</li>`).join(""):'<li class="muted">아직 고른 문제 상황이 없어요</li>'}
+    ${rev&&missed.length?missed.map(it=>`<li class="muted">놓친 것: ${esc(it.t)}</li>`).join(""):""}</ul>
+   <div class="tagrow">${gs.ev.map(id=>{const e=EVIDENCE.find(x=>x.id===id);return `<span class="tag ${rev?(sc.ev.includes(id)?"r":"w"):""}">${esc(e.law)} ${esc(e.t)}</span>`}).join("")}${rev?sc.ev.filter(id=>!gs.ev.includes(id)).map(id=>{const e=EVIDENCE.find(x=>x.id===id);return `<span class="tag" style="border:1px dashed var(--ok);background:#fff;color:var(--ok)">놓친 근거: ${esc(e.law)} ${esc(e.t)}</span>`}).join(""):""}</div>
+   ${gs.line.trim()?`<div class="line-quote">하린: “${esc(gs.line)}”</div>`:""}
+   ${gs.help.length?`<div class="tagrow">${gs.help.map(id=>`<span class="tag">${esc(HELPS.find(h=>h.id===id).t)}</span>`).join("")}</div>`:""}`;
+}
+function teacherHTML(){
+  const c=S.control;
+  return `<div class="card" style="margin-bottom:14px"><div class="tbar">
+     <div><div class="note">현재 단계</div><div style="font-size:24px;font-weight:900;color:var(--navy)">${PHASES[c.phase].n} <span class="note">(${PHASES[c.phase].m}분)</span></div></div>
+     <div class="phases">${PHASES.map((p,i)=>`<button class="ph ${i===c.phase?"on":i<c.phase?"past":""}" data-ph="${i}">${p.n} ${p.m}′</button>`).join("")}</div>
+     <div class="bigtime" id="bigTime">${fmt(remainingMs())}</div></div>
+     <div class="row"><button class="btn" id="tPlay">${c.running?"일시정지":"시작"}</button><button class="btn ghost" id="tReset">이 단계 다시</button><button class="btn ghost" id="tNext">다음 단계 →</button>
+     <span class="space"></span>
+     <button class="btn ${c.reveal?"orange":"ghost"}" id="tReveal">${c.reveal?"해설 공개 중 (끄기)":"해설 공개하기"}</button></div></div>
+   <div class="tcols">${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g];return `<div class="card gcol" style="border-top-color:${GROUP_COLORS[g]}">
+      <h3><span class="badge" style="background:${GROUP_COLORS[g]}">${i+1}모둠</span>${SCENES[g].tag}<span class="space"></span><span class="stat ${gs.submitted?"sub":""}">${gs.submitted?"제출":"작성 중"}</span></h3>
+      <div class="note" style="margin-top:4px">${esc(SCENES[g].topic)}</div>
+      ${groupSummary(g)}
+      <div class="row" style="margin-top:12px"><span class="space"></span><button class="btn sm" data-present="${g}">크게 보기</button></div></div>`}).join("")}</div>
+   <div class="section-h"><h2>출구 퀴즈</h2><span class="note">모둠별 정답</span></div>
+   <div class="card"><table class="qt"><thead><tr><th>모둠</th>${QUIZ.map((q,i)=>`<th>Q${i+1}</th>`).join("")}<th>합계</th></tr></thead><tbody>
+    ${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g];return `<tr><td><b>${i+1}모둠</b></td>${QUIZ.map((q,k)=>`<td>${gs.quiz[k]===null?"–":gs.quizDone?(gs.quiz[k]===q.a?'<span style="color:var(--ok)">O</span>':'<span style="color:var(--no)">X</span>'):"…"}</td>`).join("")}<td><b>${gs.quizDone?quizScore(gs)+" / 5":"풀이 중"}</b></td></tr>`}).join("")}
+    </tbody></table></div>
+   <div class="section-h"><h2>나의 권리 카드</h2></div>
+   <div class="wall">${["g1","g2","g3"].flatMap(g=>S.groups[g].cards.filter(c=>c.right.trim()).map(c=>`<div class="rcard"><b>${esc(c.name||"이름 없음")}</b> <span class="note">${g.slice(1)}모둠</span><br>${esc(c.right)}${c.how.trim()?`<br><span class="muted">→ ${esc(c.how)}</span>`:""}</div>`)).join("")||'<p class="muted">아직 작성된 카드가 없어요.</p>'}</div>
+   <div class="row" style="margin-top:28px"><span class="space"></span><button class="btn sm ghost" id="resetAll">모든 기록 지우기</button></div>`;
+}
+function setControl(patch){Object.assign(S.control,patch);save("control",0);render()}
+function bindTeacher(){
+  const c=S.control;
+  $("#tPlay").onclick=()=>{if(c.running)setControl({running:false,remaining:Math.max(0,c.endsAt-Date.now())});else setControl({running:true,endsAt:Date.now()+c.remaining})};
+  $("#tReset").onclick=()=>setControl({running:false,remaining:PHASES[c.phase].m*60000});
+  $("#tNext").onclick=()=>{const p=Math.min(PHASES.length-1,c.phase+1);setControl({phase:p,running:false,remaining:PHASES[p].m*60000})};
+  document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const p=+b.dataset.ph;setControl({phase:p,running:false,remaining:PHASES[p].m*60000})});
+  $("#tReveal").onclick=()=>setControl({reveal:!c.reveal});
+  document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present));
+  $("#resetAll").onclick=()=>$("#confirm").classList.add("on");
+}
+function openPresent(g){
+  presentG=g;const sc=SCENES[g],num=g.slice(1);
+  $("#presentBody").innerHTML=`<div class="row"><span class="badge" style="background:${GROUP_COLORS[g]}">${num}모둠</span><span class="scene-tag">${sc.tag} · ${esc(sc.topic)}</span><span class="space"></span><button class="btn sm ghost" id="pClose">닫기</button></div>
+    <h2 style="margin-top:14px">${sc.title}</h2><p class="story">${sc.story}</p>${groupSummary(g)}
+    ${S.control.reveal?`<div class="explain" style="font-size:19px"><h3>핵심</h3>${esc(sc.point)}</div>`:""}
+    <div class="row" style="margin-top:18px">${["g1","g2","g3"].map((x,i)=>`<button class="btn sm ${x===g?"":"ghost"}" data-pg="${x}">${i+1}모둠</button>`).join("")}</div>`;
+  $("#present").classList.add("on");
+  $("#pClose").onclick=()=>{presentG=null;$("#present").classList.remove("on")};
+  document.querySelectorAll("[data-pg]").forEach(b=>b.onclick=()=>openPresent(b.dataset.pg));
+}
+$("#present").addEventListener("click",e=>{if(e.target.id==="present"){presentG=null;$("#present").classList.remove("on")}});
+$("#cfNo").onclick=()=>$("#confirm").classList.remove("on");
+$("#cfYes").onclick=()=>{$("#confirm").classList.remove("on");S.control=blankControl();save("control",0);for(const g of["g1","g2","g3"]){S.groups[g]=blankGroup();save(g,0)}render();toast("모든 기록을 지웠어요")};
+
+/* ================================================================== timer */
+function tick(){
+  const ms=remainingMs();
+  const pn=$("#phaseName");if(pn)pn.textContent=PHASES[S.control.phase].n;
+  const ts=$("#timerSmall");if(ts)ts.textContent=fmt(ms);
+  const bt=$("#bigTime");if(bt){bt.textContent=fmt(ms);bt.classList.toggle("warn",ms<=60000)}
+}
+setInterval(()=>{if(S.user)tick()},500);
+if(DEMO)window.addEventListener("storage",e=>{if(e.key===LS_KEY){loadDemo();render(true)}});
+
+render();
+resume();
+</script>
+</body>
+</html>
