@@ -338,6 +338,7 @@ function loginHTML(){
       <img src="assets/logo-white.png" alt="인천산업정보학교">
       <div class="kick">제빵 수업 연계 노동인권교육</div>
       <h1>하린의<br><span>첫 직장 한 달</span></h1>
+      <img src="assets/harin-tray.png" alt="빵을 들고 웃는 신입 제빵사 하린" style="position:absolute;right:48px;bottom:48px;width:220px;max-width:30%;border-radius:20px;border:5px solid var(--orange);background:#fff;z-index:1">
       <p>신입 제빵사 하린의 한 달을 따라가며 <b>판단 → 근거 → 행동</b> 순서로 하린을 도와주세요. 우리 모둠 계정으로 로그인하면 모둠 화면이 열립니다.</p>
     </section><section class="right"><form class="lbox" id="lform" autocomplete="on">
       <h2>로그인</h2>
@@ -360,7 +361,8 @@ function bindLogin(){
 
 const STEPS=["장면 읽기","① 판단","② 근거","③ 행동","출구 퀴즈","나의 권리 카드"];
 function stepDone(g,i){const gs=S.groups[g];return [true,gs.sel.length>0,gs.ev.length>0,gs.submitted,gs.quizDone,gs.cards.some(c=>c.right.trim())][i]&&i>0}
-function harinSVG(){return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#fff"/><path d="M16 26c0-10 7-16 16-16s16 6 16 16v4H16z" fill="#fff" stroke="#1B2D5B" stroke-width="2"/><rect x="18" y="24" width="28" height="6" rx="3" fill="#fff" stroke="#1B2D5B" stroke-width="2"/><circle cx="32" cy="38" r="11" fill="#f6d2b4"/><circle cx="28" cy="37" r="1.6" fill="#1F2937"/><circle cx="36" cy="37" r="1.6" fill="#1F2937"/><path d="M29 42q3 2 6 0" stroke="#1F2937" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M20 62c1-8 6-12 12-12s11 4 12 12" fill="#fff" stroke="#F59E0B" stroke-width="2"/></svg>`}
+const HEADS={g1:"assets/harin-head-worry.png",g2:"assets/harin-head-sweat.png",g3:"assets/harin-head-speak.png"};
+function harinSVG(g){return `<img src="${g?HEADS[g]:"assets/harin-face.png"}" alt="하린" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--orange);background:#fff">`}
 
 function groupHTML(g){
   const sc=SCENES[g],gs=S.groups[g],rev=S.control.reveal,step=VIEW.step||0,num=g.slice(1);
@@ -369,7 +371,7 @@ function groupHTML(g){
     body=`<div class="card"><span class="scene-tag">${sc.tag} · ${esc(sc.topic)}</span>
       <h2 style="margin-top:10px;font-size:24px;color:var(--navy)">${sc.title}</h2>
       <p class="story">${sc.story}</p>
-      <div class="who">${harinSVG()}<div><b>모둠 역할 나누기</b><div class="note" style="margin-top:4px">판단자: 문제 상황을 고르는 사람 · 근거 탐색자: 근거 카드를 찾는 사람 · 대변인: 하린의 대사를 쓰고 발표하는 사람</div></div></div>
+      <div class="who">${harinSVG(g)}<div><b>모둠 역할 나누기</b><div class="note" style="margin-top:4px">판단자: 문제 상황을 고르는 사람 · 근거 탐색자: 근거 카드를 찾는 사람 · 대변인: 하린의 대사를 쓰고 발표하는 사람</div></div></div>
       <div class="row" style="margin-top:16px"><span class="space"></span><button class="btn" data-step="1">판단하러 가기 →</button></div></div>`;
   }else if(step===1){
     body=`<div class="card"><p class="q-lead">하린에게 일어난 일 중 <u>노동인권 문제</u>라고 생각하는 것을 모두 고르세요.</p>
