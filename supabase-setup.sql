@@ -12,7 +12,7 @@ alter table public.lesson_state enable row level security;
 
 create policy "harin class accounts read" on public.lesson_state
   for select to authenticated
-  using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','g1@harin.example.com','g2@harin.example.com','g3@harin.example.com','observer@harin.example.com'));
+  using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','g1@harin.example.com','g2@harin.example.com','g3@harin.example.com','observer@harin.example.com','present@harin.example.com'));
 
 create policy "harin teacher writes all" on public.lesson_state
   for update to authenticated
@@ -35,3 +35,23 @@ exception when duplicate_object then null; end $$;
 
 -- 수업 계정은 Supabase 대시보드 > Authentication > Add user 로 만들거나,
 -- 비밀번호를 바꿀 때도 대시보드에서 해당 사용자의 비밀번호를 재설정하세요.
+
+-- 교사 계정만 수업 계정 6개의 비밀번호를 바꾸는 함수 (교사 화면 '계정 비밀번호 설정'에서 사용)
+create or replace function public.harin_set_password(target text, new_password text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if (select auth.jwt() ->> 'email') is distinct from 'teacher@harin.example.com' then
+    raise exception '교사 계정만 비밀번호를 바꿀 수 있습니다' using errcode = '42501';
+  end if;
+  if target not in ('teacher','g1','g2','g3','observer','present') then
+    raise exception '바꿀 수 없는 계정입니다' using errcode = '22023';
+  end if;
+  if new_password is null or length(new_password) < 6 or length(new_password) > 64 then
+    raise exception '비밀번호는 6~64자로 정해 주세요' using errcode = '22023';
+  end if;
+  update auth.users set encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')), updated_at = now()
+   where email = target || '@harin.example.com';
+  if not found then raise exception '계정을 찾을 수 없습니다' using errcode = 'P0002'; end if;
+end; $$;
+revoke all on function public.harin_set_password(text, text) from public, anon;
+grant execute on function public.harin_set_password(text, text) to authenticated;
