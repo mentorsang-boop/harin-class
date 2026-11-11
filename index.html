@@ -338,8 +338,10 @@ function loginHTML(){
       <img src="assets/logo-white.png" alt="인천산업정보학교">
       <div class="kick">제빵 수업 연계 노동인권교육</div>
       <h1>하린의<br><span>첫 직장 한 달</span></h1>
-      <img src="assets/harin-tray.png" alt="빵을 들고 웃는 신입 제빵사 하린" style="position:absolute;right:48px;bottom:48px;width:220px;max-width:30%;border-radius:20px;border:5px solid var(--orange);background:#fff;z-index:1">
-      <p>신입 제빵사 하린의 한 달을 따라가며 <b>판단 → 근거 → 행동</b> 순서로 하린을 도와주세요. 우리 모둠 계정으로 로그인하면 모둠 화면이 열립니다.</p>
+      <div style="display:flex;gap:24px;align-items:center;position:relative;z-index:1;flex-wrap:wrap">
+        <img src="assets/harin-tray.png" alt="빵을 들고 웃는 신입 제빵사 하린" style="width:150px;border-radius:18px;border:4px solid var(--orange);background:#fff;flex:none">
+        <p style="flex:1;min-width:220px;margin:0">신입 제빵사 하린의 한 달을 따라가며 <b>판단 → 근거 → 행동</b> 순서로 하린을 도와주세요. 우리 모둠 계정으로 로그인하면 모둠 화면이 열립니다.</p>
+      </div>
     </section><section class="right"><form class="lbox" id="lform" autocomplete="on">
       <h2>로그인</h2>
       <div class="roles">${ROLES.map(r=>`<button type="button" class="role ${r.id===loginRole?"sel":""}" data-role="${r.id}"><span class="dot" style="background:${r.c}">${r.k}</span>${r.n}</button>`).join("")}</div>
