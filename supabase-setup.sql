@@ -55,3 +55,14 @@ begin
 end; $$;
 revoke all on function public.harin_set_password(text, text) from public, anon;
 grant execute on function public.harin_set_password(text, text) to authenticated;
+
+-- v1.7.0: PPT 편집 내용 저장 행 'deck', QR 바로 입장 키
+alter table public.lesson_state drop constraint if exists lesson_state_id_check;
+alter table public.lesson_state add constraint lesson_state_id_check check (id in ('control','g1','g2','g3','deck'));
+insert into public.lesson_state (id) values ('deck') on conflict (id) do nothing;
+create table if not exists public.harin_qr_keys (id text primary key check (id in ('g1','g2','g3')), key text not null, updated_at timestamptz not null default now());
+alter table public.harin_qr_keys enable row level security;
+create policy "harin teacher and present read qr keys" on public.harin_qr_keys for select to authenticated
+  using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','present@harin.example.com'));
+-- harin_issue_qr_keys(): 교사만, 모둠 3개 비밀번호를 무작위 키로 바꾸고 harin_qr_keys에 저장
+-- harin_set_password(): 직접 바꾸면 해당 모둠의 QR 키 삭제 (전체 정의는 Supabase 마이그레이션 harin_class_deck_and_qr_keys 참고)

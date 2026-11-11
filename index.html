@@ -18,7 +18,7 @@
   --g1:#F59E0B; --g2:#2563EB; --g3:#1B2D5B; --r:14px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
 button{font:inherit;cursor:pointer}
 textarea,input{font:inherit}
 .topbar{background:var(--navy);color:#fff}
@@ -203,6 +203,21 @@ body.presenting,html:has(body.presenting){background:#0b1022;overflow:hidden}
 .stage{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:#fff;overflow:hidden;color:#1F2937;font-family:"Noto Sans KR","Malgun Gothic",sans-serif}
 .sl{position:absolute;inset:0;padding:198px 96px 150px;display:flex;flex-direction:column;gap:40px;background:#fff}
 .sl *{margin:0}
+/* 한글이 단어 중간에서 끊기지 않게, 제목은 줄 길이를 고르게 */
+.sl{word-break:keep-all;overflow-wrap:break-word;letter-spacing:-.01em;line-break:strict}
+.sl h1,.sl h2,.sl h3{letter-spacing:-.025em;text-wrap:balance}
+.sl p,.sl td,.sl li{text-wrap:pretty}
+.sl .typing{display:none;font-size:20px;font-weight:700;color:#B45309;background:#FEF3C7;border-radius:999px;padding:3px 12px;animation:blink 1.1s ease-in-out infinite}
+.sl .typing.on{display:inline-block}
+@keyframes blink{50%{opacity:.35}}
+.sl .kw{display:inline-block;font-size:21px;font-weight:700;border-radius:10px;padding:4px 12px;margin:0 6px 6px 0}
+.sl .kw.y{background:#FEF3C7;color:#92400E}.sl .kw.b{background:#DBEAFE;color:#1E3A8A}
+.sl .kw.new{animation:pop .5s ease-out both}
+.sl .pbar{display:flex;gap:6px;margin:8px 0 10px}.sl .pbar i{flex:1;height:10px;border-radius:5px;background:#E5E7EB}.sl .pbar i.on{background:#22C55E}
+.sl [data-ek].editable{outline:2px dashed #F59E0B;outline-offset:4px;cursor:text}
+.sl [data-ek].editable:focus{outline:3px solid #F59E0B;background:rgba(245,158,11,.08)}
+.pctl.editing{opacity:1}
+.pctl .on{background:#F59E0B!important;color:#1F2937!important;font-weight:700}
 .sl.dark{background:#1B2D5B;color:#fff;padding:96px 160px}
 .sl .hb{position:absolute;left:0;top:0;width:1920px;height:150px;background:#1B2D5B}
 .sl .ht{position:absolute;left:96px;top:36px;width:1300px;font-size:60px;font-weight:700;line-height:1.3;color:#fff}
@@ -314,7 +329,7 @@ const QUIZ=[
 ];
 const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const APP_VERSION="v1.6.0",APP_DATE="2026-11-11";
+const APP_VERSION="v1.7.0",APP_DATE="2026-11-11";
 const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"present",n:"발표 화면(PPT)",c:"#B45309",k:"P"},{id:"observer",n:"참관 (보기 전용)",c:"#6B7280",k:"참"}];
 const ACCOUNTS=[{id:"g1",n:"1모둠"},{id:"g2",n:"2모둠"},{id:"g3",n:"3모둠"},{id:"observer",n:"참관 (보기 전용)"},{id:"present",n:"발표 화면(PPT)"},{id:"teacher",n:"교사 (나)"}];
 const canPresent=r=>r==="teacher"||r==="observer"||r==="present";
@@ -333,7 +348,11 @@ const allCards=()=>["g1","g2","g3"].flatMap(g=>S.groups[g].cards.filter(c=>(c.th
 const CFG=window.HARIN_CONFIG||{};
 const DEMO=!CFG.SUPABASE_URL||CFG.SUPABASE_URL.includes("YOUR-PROJECT");
 const sb=DEMO?null:window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,storageKey:"harin-class-auth"}});
-const S={user:null,role:null,control:blankControl(),groups:{g1:blankGroup(),g2:blankGroup(),g3:blankGroup()},net:"init",channel:null};
+const S={user:null,role:null,control:blankControl(),groups:{g1:blankGroup(),g2:blankGroup(),g3:blankGroup()},net:"init",channel:null,deck:{},upd:{},qr:{}};
+// 모둠 활동 중 발표 화면에 띄울 짧은 키워드
+const KW={g1:{a:"유니폼 지급",b:"계약서 미작성",c:"시급 10,000원",d:"위생교육"},g2:{a:"새벽 5시 출근",b:"주 60시간",c:"휴게시간 없음",d:"근무표 공지",e:"수당 누락"},g3:{a:"정확한 지적",b:"공개 모욕",c:"단톡방 조롱",d:"센서 고장 믹서",e:"속도 높이기"}};
+for(const g in KW)SCENES[g].items.forEach(it=>it.kw=KW[g][it.id]);
+let QR_ERR=false;
 const LS_KEY="harin-class-demo-v1";
 function loadDemo(){try{const j=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(j){S.control=Object.assign(blankControl(),j.control||{});for(const g of["g1","g2","g3"])S.groups[g]=Object.assign(blankGroup(),(j.groups||{})[g]||{})}}catch(e){}}
 function saveDemo(){try{localStorage.setItem(LS_KEY,JSON.stringify({control:S.control,groups:S.groups}))}catch(e){}}
@@ -347,10 +366,12 @@ async function login(roleId,pw){
   await startSync();return null;
 }
 async function logout(){if(!DEMO){try{if(S.channel)sb.removeChannel(S.channel);await sb.auth.signOut()}catch(e){}}S.user=null;S.role=null;PRES.on=false;document.body.classList.remove("presenting");if(location.hash)history.replaceState(null,"",location.pathname);render()}
-function applyRow(row){
+function applyRow(row,live){
   if(!row)return;
   if(row.id==="control")S.control=Object.assign(blankControl(),row.data||{});
+  else if(row.id==="deck")S.deck=row.data||{};
   else if(S.groups[row.id]){
+    if(live)S.upd[row.id]=Date.now(); // 방금 작성 중 표시용
     if(S.role===row.id&&pending[row.id])return; // 내 기기에서 쓰는 중이면 덮어쓰지 않음
     S.groups[row.id]=Object.assign(blankGroup(),row.data||{});
   }
@@ -359,9 +380,10 @@ async function startSync(){
   S.net="init";setNet();
   const {data,error}=await sb.from("lesson_state").select("id,data");
   if(error){S.net="error";setNet();toast("기록을 불러오지 못했어요: "+error.message);return}
-  data.forEach(applyRow);
+  data.forEach(r=>applyRow(r,false));
+  if(S.role==="teacher"||S.role==="present")await loadQrKeys();
   S.channel=sb.channel("lesson_state_changes")
-    .on("postgres_changes",{event:"*",schema:"public",table:"lesson_state"},p=>{applyRow(p.new);render(true)})
+    .on("postgres_changes",{event:"*",schema:"public",table:"lesson_state"},p=>{applyRow(p.new,true);render(p.new&&p.new.id==="deck"?false:true)})
     .subscribe(st=>{S.net=st==="SUBSCRIBED"?"live":(st==="CLOSED"||st==="CHANNEL_ERROR"||st==="TIMED_OUT")?"error":S.net;setNet()});
   render();
 }
@@ -370,14 +392,28 @@ function save(id,delay){
   if(DEMO){saveDemo();return}
   pending[id]=true;clearTimeout(timers[id]);
   timers[id]=setTimeout(async()=>{
-    const data=id==="control"?S.control:S.groups[id];
+    const data=id==="control"?S.control:id==="deck"?S.deck:S.groups[id];
     const {error}=await sb.from("lesson_state").update({data:JSON.parse(JSON.stringify(data)),updated_at:new Date().toISOString()}).eq("id",id);
     pending[id]=false;
     if(error){toast("저장하지 못했어요: "+error.message)}
   },delay==null?500:delay);
 }
+async function loadQrKeys(){
+  if(DEMO)return;
+  const {data}=await sb.from("harin_qr_keys").select("id,key");
+  S.qr={};(data||[]).forEach(r=>S.qr[r.id]=r.key);
+}
 async function resume(){
   if(DEMO)return;
+  // QR 바로 입장: 주소의 #k= 키로 비밀번호 없이 로그인하고, 키는 주소창에서 바로 지움
+  const hk=new URLSearchParams(location.hash.slice(1)).get("k"),hr=new URLSearchParams(location.search).get("r");
+  if(hk&&["g1","g2","g3"].includes(hr)){
+    history.replaceState(null,"",location.pathname+"?r="+hr);loginRole=hr;
+    try{await sb.auth.signOut()}catch(e){}
+    const err=await login(hr,hk);
+    if(err){QR_ERR=true;render()}
+    return;
+  }
   const {data}=await sb.auth.getSession();
   if(!(data&&data.session))return;
   const r=new URLSearchParams(location.search).get("r");
@@ -445,7 +481,7 @@ function loginHTML(){
       <h2>로그인</h2>
       <div class="roles">${ROLES.map(r=>`<button type="button" class="role ${r.id===loginRole?"sel":""}" data-role="${r.id}"><span class="dot" style="background:${r.c}">${r.k}</span>${r.n}</button>`).join("")}</div>
       <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password" placeholder="선생님이 알려준 비밀번호" ${DEMO?'value="demo"':""}></div>
-      <div id="lerr"></div>
+      <div id="lerr">${QR_ERR?'<div class="err">QR 입장 키가 바뀌었어요. 화면에 띄운 새 QR을 찍거나 비밀번호를 입력해 주세요.</div>':""}</div>
       <button class="btn" type="submit" style="padding:14px">들어가기</button>
       <p class="note">${DEMO?"지금은 체험 모드입니다. 비밀번호 없이 들어가며, 기록은 이 기기에만 저장됩니다.":"아이디는 고를 필요 없이 버튼만 누르면 됩니다. 비밀번호는 책상의 안내 카드를 보세요. ‘발표 화면(PPT)’은 교사용 TV에서 로그인하면 바로 발표가 열립니다."}</p>
       <p class="ver">수업도구 ${APP_VERSION} · ${APP_DATE}</p>
@@ -566,9 +602,11 @@ function teacherHTML(){
    <div class="section-h"><h2>나의 권리 카드 · 학생들의 생각</h2><span class="note">${allCards().length}명 작성 · 실시간</span></div>
    ${wallBox(560)}
    <div class="wall" style="margin-top:12px">${allCards().map(c=>`<div class="rcard"><b>${esc(c.name||"이름 없음")}</b> <span class="note">${c.g.slice(1)}모둠</span>${(c.thought||"").trim()?`<br><b>“${esc(c.thought)}”</b>`:""}${(c.right||"").trim()?`<br>${esc(c.right)}`:""}${(c.how||"").trim()?`<br><span class="muted">→ ${esc(c.how)}</span>`:""}</div>`).join("")}</div>
-   <div class="section-h"><h2>태블릿 접속 QR · 짧은 주소</h2><span class="note">찍거나 주소를 입력하면 해당 버튼이 선택된 로그인 화면이 열려요</span><span class="space"></span><button class="btn sm" id="qrPrint">QR 카드 인쇄</button></div>
-   <div class="card"><div class="qrgrid">${ROLES.map(r=>`<div class="qrc"><div class="qrimg">${qrSvg(shortUrl(r.id))}</div><b>${r.n}</b><span>${esc(shortUrl(r.id).replace(/^https?:\/\//,""))}</span></div>`).join("")}</div>
-    <p class="note" style="margin-top:8px">QR과 주소에는 비밀번호가 들어 있지 않아요. 학생은 QR을 찍은 뒤 비밀번호만 입력하면 됩니다. 공용 컴퓨터는 ‘발표 화면(PPT)’ 짧은 주소로 들어가세요.</p></div>
+   <div class="section-h"><h2>태블릿 접속 QR · 짧은 주소</h2><span class="note">찍거나 주소를 입력하면 해당 버튼이 선택된 로그인 화면이 열려요</span><span class="space"></span><button class="btn sm orange" id="qrIssue">${Object.keys(S.qr).length?"QR 바로 입장 새로 만들기":"QR 바로 입장 켜기"}</button><button class="btn sm" id="qrPrint">QR 카드 인쇄</button></div>
+   <div class="card">
+    <p style="margin:0 0 10px;font-weight:700;color:${Object.keys(S.qr).length?"var(--ok)":"var(--muted)"}">${Object.keys(S.qr).length?"● QR 바로 입장 켜짐 — 모둠 QR을 찍으면 비밀번호 없이 바로 들어가요 (발표 화면 7에도 표시)":"○ QR 바로 입장 꺼짐 — QR을 찍은 뒤 비밀번호를 입력해요"}</p>
+    <div class="qrgrid">${ROLES.map(r=>{const u=["g1","g2","g3"].includes(r.id)?qrLink(r.id):shortUrl(r.id);return `<div class="qrc"><div class="qrimg">${qrSvg(u)}</div><b>${r.n}</b><span>${esc(shortUrl(r.id).replace(/^https?:\/\//,""))}</span>${S.qr[r.id]?`<span style="color:var(--ok);font-weight:700">바로 입장 · 비밀번호 ${esc(S.qr[r.id])}</span>`:""}</div>`}).join("")}</div>
+    <p class="note" style="margin-top:8px">‘QR 바로 입장 켜기’를 누르면 1·2·3모둠 비밀번호가 새 무작위 값으로 바뀌고, 그 값이 모둠 QR에 담겨요. 예전 모둠 비밀번호는 더 이상 쓰지 않아요. 아래에서 모둠 비밀번호를 직접 바꾸면 그 모둠은 다시 비밀번호 입력 방식이 됩니다. 공용 컴퓨터는 ‘발표 화면(PPT)’ 짧은 주소로 들어가세요.</p></div>
    <div class="section-h"><h2>계정 비밀번호 설정</h2><span class="note">교사만 바꿀 수 있어요 · 6~64자</span></div>
    <div class="card">${DEMO?'<p class="muted">체험 모드에서는 비밀번호를 바꿀 수 없어요.</p>':ACCOUNTS.map(a=>`<div class="pwrow"><b>${a.n}</b><input type="text" autocomplete="off" spellcheck="false" data-pw="${a.id}" placeholder="새 비밀번호 (6자 이상)"><button class="btn sm" data-pwset="${a.id}">바꾸기</button><span class="msg" id="pwmsg-${a.id}"></span></div>`).join("")}
     <p class="note" style="margin-top:10px">바꾼 비밀번호는 다시 볼 수 없으니 로그인 카드에 적어 두세요. 이미 로그인한 태블릿은 그대로 쓰이고, 다음 로그인부터 새 비밀번호가 필요합니다.</p></div>
@@ -643,8 +681,15 @@ function bindTeacher(){
   $("#tReveal").onclick=()=>setControl({reveal:!c.reveal});
   document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present));
   $("#resetAll").onclick=()=>$("#confirm").classList.add("on");
+  $("#qrIssue").onclick=async()=>{
+    if(DEMO)return toast("체험 모드에서는 쓸 수 없어요");
+    if(!confirm("1·2·3모둠 비밀번호를 새 무작위 값으로 바꾸고 QR 바로 입장을 켤까요?\n예전에 출력한 모둠 비밀번호·QR 카드는 더 이상 쓸 수 없어요."))return;
+    const {data,error}=await sb.rpc("harin_issue_qr_keys");
+    if(error)return toast("QR을 만들지 못했어요: "+error.message);
+    S.qr={};(data||[]).forEach(r=>S.qr[r.id]=r.key);render();toast("QR 바로 입장을 켰어요. 발표 화면 7의 QR도 바뀌었어요.");
+  };
   $("#qrPrint").onclick=()=>{
-    const cards=["g1","g2","g3","observer","observer","present"].map(id=>{const r=ROLES.find(x=>x.id===id);return `<div class="c"><div class="h">하린의 첫 직장 한 달 · 수업도구</div><div class="q">${qrSvg(shortUrl(id),6)}</div><div class="n">${r.n}</div><div class="u">${esc(shortUrl(id).replace(/^https?:\/\//,""))}</div><div class="p">비밀번호 : ____________________</div></div>`}).join("");
+    const cards=["g1","g2","g3","observer","observer","present"].map(id=>{const r=ROLES.find(x=>x.id===id),u=S.qr[id]?qrLink(id):shortUrl(id);return `<div class="c"><div class="h">하린의 첫 직장 한 달 · 수업도구</div><div class="q">${qrSvg(u,6)}</div><div class="n">${r.n}</div><div class="u">${esc(shortUrl(id).replace(/^https?:\/\//,""))}</div><div class="p">${S.qr[id]?"QR을 찍으면 비밀번호 없이 바로 입장":"비밀번호 : ____________________"}</div></div>`}).join("");
     const w=window.open("","_blank");if(!w){toast("팝업이 막혀 있어요. 팝업을 허용해 주세요");return}
     w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>태블릿 접속 QR 카드</title><style>body{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;margin:0;padding:12mm}.g{display:grid;grid-template-columns:1fr 1fr;gap:8mm}.c{border:2px solid #1B2D5B;border-top:10px solid #F59E0B;border-radius:6mm;padding:6mm;text-align:center;break-inside:avoid}.h{font-size:11pt;color:#6B7280}.q svg{width:55mm;height:55mm}.n{font-size:20pt;font-weight:900;color:#1B2D5B}.u{font-size:11pt;color:#374151;margin-top:2mm}.p{font-size:12pt;margin-top:5mm;text-align:left}</style></head><body><div class="g">${cards}</div><script>onload=()=>print()<\/script></body></html>`);w.document.close();
   };
@@ -656,6 +701,7 @@ function bindTeacher(){
     b.disabled=false;
     if(error){msg.innerHTML=`<span style="color:var(--no)">${esc(error.message)}</span>`;return}
     inp.value="";msg.innerHTML=`<span style="color:var(--ok)">${esc(ACCOUNTS.find(a=>a.id===id).n)} 비밀번호를 바꿨어요 (${new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})})</span>`;
+    if(S.qr[id]){delete S.qr[id];toast("이 모둠은 QR 바로 입장이 꺼지고 비밀번호 입력 방식으로 바뀌었어요")}
   });
 }
 function openPresent(g){
@@ -703,6 +749,24 @@ function pGroupResult(g,n){
       <div>${gs.help.map(id=>`<span class="chip">${esc(HELPS.find(h=>h.id===id).t)}</span>`).join("")}</div></div>
     </div></div>${FTR(`${FT} · ${GNAME[g]} 발표`,n)}</div>`;
 }
+// QR 링크: 교사가 'QR 바로 입장'을 켰으면 키를 #뒤에 담아 비밀번호 없이 입장
+const qrLink=g=>S.qr[g]?BASE_URL+"?r="+g+"#k="+encodeURIComponent(S.qr[g]):shortUrl(g);
+const kwSeen=new Set();
+function pGroupLive(g){
+  const sc=SCENES[g],gs=S.groups[g],d=STEP_DONE(g),ph=S.control.phase;
+  const head=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><p style="font-size:30px;font-weight:900;color:#1B2D5B">${GNAME[g]}</p><span class="typing" data-typing="${g}">✍ 작성 중</span></div>`;
+  const box=(inner)=>`<div style="background:#fff;border:2px solid #E5E7EB;border-top:10px solid ${GROUP_COLORS[g]};border-radius:18px;padding:14px 18px;overflow:hidden">${inner}</div>`;
+  if(ph<2){ // 활동 전: 입장 QR
+    return box(`<div style="display:flex;gap:14px;align-items:flex-start"><div style="flex:none;width:170px;height:170px">${qrSvg(qrLink(g),4).replace("<svg ","<svg width=\"170\" height=\"170\" ")}</div><div style="flex:1;min-width:0">${head}<p style="font-size:20px;color:#6B7280;margin-top:6px">${S.qr[g]?"QR을 찍으면<br>바로 입장":"QR을 찍고<br>비밀번호 입력"}</p><p style="font-size:19px;color:#9CA3AF;margin-top:8px;word-break:break-all">${esc(shortUrl(g).replace(/^https?:\/\//,""))}</p></div></div>`);
+  }
+  const kw=(cls,t)=>{const key=g+cls+t,isNew=!kwSeen.has(key);kwSeen.add(key);return `<span class="kw ${cls}${isNew?" new":""}">${esc(t)}</span>`};
+  const chips=[...sc.items.filter(it=>gs.sel.includes(it.id)).map(it=>kw("y",it.kw)),...gs.ev.map(id=>kw("b",EVIDENCE.find(e=>e.id===id).t))];
+  const line=gs.line.trim(),cards=gs.cards.filter(c=>(c.thought||c.right||"").trim()).length;
+  return box(`${head}<div class="pbar">${d.map(x=>`<i class="${x?"on":""}"></i>`).join("")}</div>
+    <div>${chips.join("")||'<span style="font-size:21px;color:#9CA3AF">장면을 읽는 중…</span>'}</div>
+    ${line?`<p style="margin-top:6px;font-size:21px;line-height:1.4;background:#1B2D5B;color:#fff;border-radius:10px;padding:6px 12px">💬 “${esc(line.slice(0,16))}${line.length>16?"…":""}” <span style="color:#F59E0B">${line.length}자</span></p>`:""}
+    ${gs.submitted?'<p style="margin-top:6px;font-size:20px;font-weight:700;color:#15803D">✓ 제출 완료</p>':""}${cards?`<p style="margin-top:4px;font-size:19px;color:#6B7280">권리 카드 ${cards}장</p>`:""}`);
+}
 function pScene(g,n,title,head,img,col,cards,notProb){
   return `<div class="sl" style="gap:36px">${HDR(title)}
    <div style="display:flex;align-items:center;gap:32px"><img src="${img}" alt="" style="width:150px;height:112px;object-fit:cover;border-radius:14px;border:4px solid ${col}"><h3 style="font-size:52px;font-weight:900;line-height:1.3;color:#1B2D5B">${head}</h3></div>
@@ -746,8 +810,8 @@ const SLIDES=[
    <div style="display:flex;gap:24px;background:#F3F4F6;border-left:12px solid #1B2D5B;border-radius:20px;padding:24px 36px;align-items:center"><p style="font-size:28px;font-weight:900;color:#1B2D5B;flex:none">모둠 역할</p><p style="font-size:28px;line-height:1.45;color:#374151"><b>판단자</b> 문제 상황 고르기 · <b>근거 탐색자</b> 근거 카드 찾기 · <b>대변인</b> 하린의 대사 쓰고 발표하기</p></div>
    <div style="display:flex;gap:28px;align-items:stretch;flex:1">
     <div style="flex:none;width:600px;background:#1B2D5B;border-radius:24px;padding:24px 40px;color:#fff;display:flex;flex-direction:column;justify-content:center;gap:4px"><p id="pPhase" style="font-size:28px;font-weight:700;color:#F59E0B">모둠 활동 남은 시간</p><p id="pTimer" style="font-size:128px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">18:00</p></div>
-    <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px">${["g1","g2","g3"].map(g=>{const d=STEP_DONE(g);return `<div style="background:#fff;border:2px solid #E5E7EB;border-top:10px solid ${GROUP_COLORS[g]};border-radius:18px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="flex:none;width:150px;height:150px">${qrSvg(shortUrl(g),4).replace("<svg ","<svg width=\"150\" height=\"150\" ")}</div><div style="flex:1;min-width:0"><p style="font-size:28px;font-weight:900;color:#1B2D5B">${GNAME[g]}</p><p style="font-size:20px;color:#6B7280;margin-bottom:8px;word-break:break-all">${esc(shortUrl(g).replace(/^https?:\/\//,""))}</p>${STEP_NAMES.map((s,k)=>`<span class="chip ${d[k]?"ok":""}" style="font-size:18px;padding:2px 10px;margin:0 5px 5px 0">${d[k]?"✓ ":""}${s}</span>`).join("")}</div></div>`}).join("")}</div>
-   </div>${FTR("모둠 태블릿: QR을 찍고 비밀번호 입력 · 발표 화면: "+esc(shortUrl("present").replace(/^https?:\/\//,"")),n)}</div>`},
+    <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px">${["g1","g2","g3"].map(pGroupLive).join("")}</div>
+   </div>${FTR(S.control.phase<2?(Object.keys(S.qr).length?"모둠 태블릿: 우리 모둠 QR을 찍으면 바로 입장":"모둠 태블릿: 우리 모둠 QR을 찍고 비밀번호 입력"):"모둠 활동 중 · 모둠이 고른 키워드와 대사가 실시간으로 올라옵니다",n)}</div>`},
  {live:true,notes:"1모둠 발표 화면입니다. 모둠이 작성한 판단·근거·대사가 실시간으로 보입니다. 교사 화면에서 ‘해설 공개’를 켜면 맞은 것(✓)과 틀린 것(✗), 놓친 것이 표시됩니다.",html:n=>pGroupResult("g1",n)},
  {notes:"1모둠 발표 뒤에 띄웁니다. 근로계약서와 최저임금은 직원 5명 미만 작은 빵집에도 똑같이 적용된다는 점을 꼭 짚습니다. 2026년 최저임금은 10,320원, 2027년은 10,700원.",html:n=>pScene("g1",n,"장면 1 정리 · 근로계약 · 최저임금","계약서는 ‘나중에’가 아니라 <span style=\"color:#D97706\">일을 시작할 때</span>","assets/scene1.jpg","#F59E0B",
    `<div class="cy"><h3 style="font-size:32px;font-weight:900;color:#B45309">문제 상황</h3><p style="font-size:28px;line-height:1.5">3주째 근로계약서를 쓰지 않음</p><p style="font-size:28px;line-height:1.5">시급 10,000원은 2027년 최저임금 10,700원보다 적음</p></div>
@@ -777,24 +841,86 @@ const SLIDES=[
     <p style="font-size:30px;font-weight:900;color:#1B2D5B">나의 권리 카드</p>
     ${[["이름","[　　　　　　]"],["노동인권에 대한 내 생각 한마디","일한 만큼 당당하게 받는 게 내 권리다"],["내가 꼭 기억할 권리","근로계약서는 일 시작 전에 받는다"],["그런 일이 생기면 나는","기록을 남기고 1350에 상담한다"]].map(r=>`<p style="font-size:24px;color:#6B7280">${r[0]}</p><p style="font-size:30px;border-bottom:2px solid #E5E7EB;padding-bottom:10px">${r[1]}</p>`).join("")}</div>
    <img src="assets/logo-white.png" alt="" style="position:absolute;left:160px;bottom:64px;width:256px;height:48px;object-fit:contain;object-position:left"></div>`},
- {live:true,notes:"학생들이 쓴 ‘내 생각 한마디’가 하린 주위에 실시간으로 떠오릅니다. 두세 개를 골라 소리 내어 읽고, 공감하는 생각에 대해 짧게 이야기 나눈 뒤 “권리는 알고 말할 때 지켜진다”로 마무리합니다.",html:n=>`<div class="sl dark" style="padding:0;background:radial-gradient(circle at 50% 56%,#24407e 0,#1B2D5B 65%)"><div class="bar"></div>
+ {live:true,notes:"학생들이 쓴 ‘내 생각 한마디’가 하린 주위에 실시간으로 떠오릅니다. 두세 개를 골라 소리 내어 읽고, 공감하는 생각에 대해 짧게 이야기 나눈 뒤, 다음 화면에서 모두의 권리 카드를 보며 마무리합니다.",html:n=>`<div class="sl dark" style="padding:0;background:radial-gradient(circle at 50% 56%,#24407e 0,#1B2D5B 65%)"><div class="bar"></div>
    <h2 style="position:absolute;left:96px;top:44px;font-size:56px;font-weight:900">하린과 함께 나누는 <span style="color:#F59E0B">우리의 노동인권 생각</span></h2>
    <img src="assets/logo-white.png" alt="" style="position:absolute;right:96px;top:50px;width:300px;height:56px;object-fit:contain">
-   <div class="wallbox" style="position:absolute;left:72px;top:150px;width:1800px;height:900px;background:none;margin:0">${wallInner(1800,900,true)}</div></div>`}
+   <div class="wallbox" style="position:absolute;left:72px;top:150px;width:1800px;height:900px;background:none;margin:0">${wallInner(1800,900,true)}</div></div>`},
+ {live:true,notes:"수업의 마지막 화면입니다. 학생 전원의 ‘나의 권리 카드’가 실시간으로 모입니다. 두세 장을 함께 읽고, 학습 목표(판단·근거·행동)를 다시 짚은 뒤 “권리는 알고, 말할 때 지켜진다”로 수업을 마무리합니다.",html:n=>pRightsCards(n)}
 ];
+function pRightsCards(n){
+  const cs=allCards(),k=cs.length;
+  const cols=k<=3?3:k<=8?4:k<=15?5:6,rows=Math.max(1,Math.ceil(k/cols)),areaH=600,gap=16,ch=Math.floor((areaH-gap*(rows-1))/rows);
+  const big=rows<=2,fs=big?28:rows===3?24:21;
+  const card=c=>`<div style="background:#fff;border:2px solid #E5E7EB;border-top:10px solid ${GROUP_COLORS[c.g]};border-radius:16px;padding:${big?18:12}px ${big?20:14}px;display:flex;flex-direction:column;gap:${big?8:4}px;overflow:hidden;height:${ch}px">
+     <p style="font-size:${fs-6}px;font-weight:700;color:#6B7280">${esc(c.name||"이름 없음")} · ${c.g.slice(1)}모둠</p>
+     ${(c.thought||"").trim()?`<p style="font-size:${fs}px;font-weight:900;line-height:1.35;color:#1B2D5B">“${esc(c.thought)}”</p>`:""}
+     ${(c.right||"").trim()?`<p style="font-size:${fs-4}px;line-height:1.35"><b style="color:#B45309">권리</b> ${esc(c.right)}</p>`:""}
+     ${(c.how||"").trim()?`<p style="font-size:${fs-5}px;line-height:1.35;color:#374151"><b style="color:#1D4ED8">행동</b> ${esc(c.how)}</p>`:""}</div>`;
+  return `<div class="sl" style="gap:24px;background:#F3F4F6">${HDR("정리 · 우리 반 나의 권리 카드")}<span class="live">● 실시간 · ${k}명</span>
+   <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${gap}px;height:${areaH}px;align-content:start">${k?cs.map(card).join(""):'<p style="font-size:30px;color:#6B7280;grid-column:1/-1">아직 작성된 권리 카드가 없어요. 수업도구의 ‘나의 권리 카드’에 써 주세요.</p>'}</div>
+   <div style="display:flex;align-items:center;gap:24px;background:#1B2D5B;border-radius:20px;padding:16px 28px;color:#fff">
+    <img src="assets/harin-face.png" alt="" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:4px solid #F59E0B;background:#fff">
+    <p style="font-size:40px;font-weight:900;flex:1">권리는 알고, <span style="color:#F59E0B">말할 때</span> 지켜진다</p>
+    <p style="font-size:22px;color:#C7D2FE;text-align:right">판단 · 근거 · 행동<br>오늘의 학습 목표</p></div>
+   </div>`;
+}
+const SLIDE_IDS=["cover","then","question","goals","harin","scenes","howto","g1","scene1","g2","scene2","g3","scene3","month","quiz","mycard","wall","cards"];
+SLIDES.forEach((s,i)=>s.id=SLIDE_IDS[i]||("s"+i));
+/* ---------- PPT 편집 (교사 계정만) ---------- */
+function cleanHTML(h){ // 굵게·기울임·밑줄·줄바꿈·글자색만 남김
+  const t=document.createElement("template");t.innerHTML=h;
+  const fix=node=>{[...node.childNodes].forEach(c=>{
+    if(c.nodeType===3)return;
+    if(c.nodeType!==1){c.remove();return}
+    const tag=c.tagName.toLowerCase();fix(c);
+    if(!["b","strong","i","em","u","br","span"].includes(tag)){c.replaceWith(...c.childNodes);return}
+    const col=c.style?c.style.color:"";[...c.attributes].forEach(a=>c.removeAttribute(a.name));
+    if(tag==="span"&&col)c.style.color=col;
+  })};
+  fix(t.content);return t.innerHTML.trim();
+}
+function applyDeck(st,s){ // 편집 가능한 글자에 번호를 붙이고 저장된 수정 내용을 덮어씀
+  let k=0;
+  st.querySelectorAll("h1,h2,h3,p,td,th").forEach(el=>{
+    if(el.closest(".wallbox,.typing,.live")||el.querySelector("img,svg,table"))return;
+    if(s.live&&!el.classList.contains("ht"))return;
+    const key=s.id+":"+(k++);el.dataset.ek=key;
+    const o=S.deck[key];
+    if(o){if(o.h!=null)el.innerHTML=cleanHTML(o.h);if(o.fs)el.style.fontSize=o.fs+"px"}
+    if(PRES.edit){el.contentEditable="true";el.classList.add("editable");el.spellcheck=false;
+      el.onfocus=()=>{PRES.sel=el};
+      el.onblur=()=>{const h=cleanHTML(el.innerHTML);const cur=S.deck[key]||{};if(cur.h===h)return;S.deck[key]=Object.assign({},cur,{h});save("deck",0)};
+      el.onkeydown=e=>{if(e.key==="Escape"){el.blur()}e.stopPropagation()};
+    }
+  });
+}
+function deckFont(d){const el=PRES.sel;if(!el||!el.dataset.ek)return toast("먼저 고칠 글자를 누르세요");
+  const fs=Math.max(16,Math.min(200,Math.round(parseFloat(getComputedStyle(el).fontSize))+d));el.style.fontSize=fs+"px";
+  S.deck[el.dataset.ek]=Object.assign({},S.deck[el.dataset.ek],{fs});save("deck",0)}
+function deckReset(all){const s=SLIDES[PRES.i];
+  if(all){if(!confirm("이 슬라이드에서 고친 내용을 모두 원래대로 되돌릴까요?"))return;Object.keys(S.deck).forEach(k=>{if(k.startsWith(s.id+":"))delete S.deck[k]})}
+  else{const el=PRES.sel;if(!el||!el.dataset.ek)return toast("먼저 되돌릴 글자를 누르세요");delete S.deck[el.dataset.ek]}
+  save("deck",0);PRES.sel=null;renderPresent()}
 function renderPresent(fromData){
-  const root=$("#root"),s=SLIDES[PRES.i];
+  const root=$("#root"),s=SLIDES[PRES.i],isT=S.role==="teacher";
+  if(!isT)PRES.edit=false;
   document.body.classList.add("presenting");
-  if(fromData&&!s.live&&$("#stage")){tick();setNet();return}
+  if(fromData&&$("#stage")){
+    if(!s.live||(PRES.edit&&document.activeElement&&document.activeElement.isContentEditable)){tick();setNet();return}
+  }
   root.innerHTML=`<div class="stage" id="stage">${s.html(PRES.i+1)}</div>
    <div class="pnotes ${PRES.notes?"on":""}">${esc(s.notes||"")}</div>
-   <div class="pctl"><button id="pPrev" aria-label="이전">◀</button><span>${PRES.i+1} / ${SLIDES.length}</span><button id="pNext" aria-label="다음">▶</button><button id="pNotes">노트(N)</button><button id="pFull">전체화면(F)</button><span class="net" id="net"></span><span>${APP_VERSION}</span><button id="pOut">로그아웃</button></div>`;
+   <div class="pctl ${PRES.edit?"editing":""}"><button id="pPrev" aria-label="이전">◀</button><span>${PRES.i+1} / ${SLIDES.length}</span><button id="pNext" aria-label="다음">▶</button><button id="pNotes">노트(N)</button><button id="pFull">전체화면(F)</button>
+   ${isT?`<button id="pEdit" class="${PRES.edit?"on":""}">${PRES.edit?"편집 끝내기(E)":"PPT 편집(E)"}</button>${PRES.edit?'<button id="pSm">A−</button><button id="pLg">A+</button><button id="pRst">글자 원래대로</button><button id="pRstAll">슬라이드 원래대로</button>':""}`:""}
+   <span class="net" id="net"></span><span>${APP_VERSION}</span><button id="pOut">로그아웃</button></div>`;
+  const st=$("#stage");applyDeck(st,s);
   fitStage();setNet();tick();
-  $("#pPrev").onclick=e=>{e.stopPropagation();go(-1)};$("#pNext").onclick=e=>{e.stopPropagation();go(1)};
-  $("#pNotes").onclick=e=>{e.stopPropagation();PRES.notes=!PRES.notes;renderPresent()};
-  $("#pFull").onclick=e=>{e.stopPropagation();toggleFull()};
-  $("#pOut").onclick=e=>{e.stopPropagation();logout()};
-  $("#stage").onclick=e=>{go(e.clientX<innerWidth/3?-1:1)};
+  const b=(id,f)=>{const el=$(id);if(el){el.onmousedown=e=>e.preventDefault();el.onclick=e=>{e.stopPropagation();f()}}};
+  b("#pPrev",()=>go(-1));b("#pNext",()=>go(1));
+  b("#pNotes",()=>{PRES.notes=!PRES.notes;renderPresent()});b("#pFull",toggleFull);b("#pOut",logout);
+  b("#pEdit",()=>{PRES.edit=!PRES.edit;PRES.sel=null;renderPresent();if(PRES.edit)toast("점선 글자를 눌러 고치세요. 다른 곳을 누르면 저장됩니다.")});
+  b("#pSm",()=>deckFont(-2));b("#pLg",()=>deckFont(2));b("#pRst",()=>deckReset(false));b("#pRstAll",()=>deckReset(true));
+  st.onclick=e=>{if(PRES.edit)return;go(e.clientX<innerWidth/3?-1:1)};
 }
 function fitStage(){const st=$("#stage");if(!st)return;const k=Math.min(innerWidth/1920,innerHeight/1080);st.style.transform=`translate(-50%,-50%) scale(${k})`}
 function go(d){const j=Math.max(0,Math.min(SLIDES.length-1,PRES.i+d));if(j===PRES.i)return;PRES.i=j;try{sessionStorage.setItem("harin-pres-i",j)}catch(e){}renderPresent()}
@@ -802,6 +928,8 @@ function toggleFull(){if(document.fullscreenElement)document.exitFullscreen();el
 try{PRES.i=Math.min(SLIDES.length-1,+sessionStorage.getItem("harin-pres-i")||0)}catch(e){}
 document.addEventListener("keydown",e=>{
   if(!PRES.on||!S.user||!canPresent(S.role))return;
+  if(e.target&&e.target.isContentEditable)return;
+  if((e.key==="e"||e.key==="E")&&S.role==="teacher"){PRES.edit=!PRES.edit;PRES.sel=null;renderPresent();return}
   if(["ArrowRight","PageDown"," ","Enter"].includes(e.key)){e.preventDefault();go(1)}
   else if(["ArrowLeft","PageUp","Backspace"].includes(e.key)){e.preventDefault();go(-1)}
   else if(e.key==="Home"){PRES.i=0;go(0);renderPresent()}
@@ -824,6 +952,7 @@ function tick(){
     else if(ph>ACT){v=0;t="모둠 활동 끝"}
     pt.textContent=fmt(v);pt.style.color=(ph===ACT&&v<=60000)?"#F59E0B":"#fff";if(lab)lab.textContent=t;
   }
+  document.querySelectorAll("[data-typing]").forEach(el=>el.classList.toggle("on",Date.now()-(S.upd[el.dataset.typing]||0)<10000));
 }
 setInterval(()=>{if(S.user)tick()},500);
 if(DEMO)window.addEventListener("storage",e=>{if(e.key===LS_KEY){loadDemo();render(true)}});
