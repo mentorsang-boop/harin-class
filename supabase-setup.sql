@@ -66,3 +66,24 @@ create policy "harin teacher and present read qr keys" on public.harin_qr_keys f
   using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','present@harin.example.com'));
 -- harin_issue_qr_keys(): 교사만, 모둠 3개 비밀번호를 무작위 키로 바꾸고 harin_qr_keys에 저장
 -- harin_set_password(): 직접 바꾸면 해당 모둠의 QR 키 삭제 (전체 정의는 Supabase 마이그레이션 harin_class_deck_and_qr_keys 참고)
+
+-- v1.9.0 · 나의 권리 카드를 한 장씩 따로 저장 (여러 기기에서 동시에 써도 덮어쓰지 않음)
+create table public.harin_cards (
+  id uuid primary key default gen_random_uuid(),
+  grp text not null check (grp in ('g1','g2','g3')),
+  name text not null default '' check (char_length(name) <= 40),
+  thought text not null default '' check (char_length(thought) <= 200),
+  right_txt text not null default '' check (char_length(right_txt) <= 200),
+  how text not null default '' check (char_length(how) <= 200),
+  created_at timestamptz not null default now()
+);
+create index harin_cards_created_idx on public.harin_cards (created_at);
+alter table public.harin_cards enable row level security;
+create policy "harin cards read" on public.harin_cards for select to authenticated
+  using ((select auth.jwt() ->> 'email') = any (array['teacher@harin.example.com','g1@harin.example.com','g2@harin.example.com','g3@harin.example.com','observer@harin.example.com','present@harin.example.com']));
+create policy "harin cards group insert" on public.harin_cards for insert to authenticated
+  with check ((select auth.jwt() ->> 'email') = grp || '@harin.example.com' or (select auth.jwt() ->> 'email') = 'teacher@harin.example.com');
+create policy "harin cards group delete" on public.harin_cards for delete to authenticated
+  using ((select auth.jwt() ->> 'email') = grp || '@harin.example.com' or (select auth.jwt() ->> 'email') = 'teacher@harin.example.com');
+grant select, insert, delete on public.harin_cards to authenticated;
+alter publication supabase_realtime add table public.harin_cards;
