@@ -1,6 +1,13 @@
 # 하린의 첫 직장 한 달 · 수업도구
 
-현재 버전: **v1.5.0** (2026-11-11) · [버전 기록](CHANGELOG.md)
+현재 버전: **v1.6.0** (2026-11-11) · [버전 기록](CHANGELOG.md)
+
+| 짧은 주소 | 열리는 화면 |
+| --- | --- |
+| mentorsang-boop.github.io/harin-class/p | 발표 화면(PPT) — 공용 컴퓨터 |
+| mentorsang-boop.github.io/harin-class/1 · /2 · /3 | 1·2·3모둠 태블릿 |
+| mentorsang-boop.github.io/harin-class/t | 교사 |
+| mentorsang-boop.github.io/harin-class/o | 참관 (보기 전용) |
 
 인천산업정보학교 제빵 수업 연계 노동인권교육(2026. 11. 12.)에서 쓰는 모둠 활동도구와 교사용 수업 진행판입니다.
 

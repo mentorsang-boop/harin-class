@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
 :root{
   --navy:#1B2D5B; --navy-2:#1E3A8A; --orange:#F59E0B; --orange-d:#B45309; --blue:#2563EB; --blue-d:#1D4ED8;
@@ -161,6 +162,11 @@ table.qt th:first-child,table.qt td:first-child{text-align:left}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
 .toast.on{opacity:1}
 .ver{font-size:12px;color:var(--muted)}
+.qrgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.qrc{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:12px}
+.qrc .qrimg{width:120px;height:120px}
+.qrc .qrimg svg{width:100%;height:100%}
+.qrc span{font-size:12px;color:var(--muted);word-break:break-all}
 .pwrow{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .pwrow:first-child{border-top:0}
 .pwrow input{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;width:100%}
@@ -193,7 +199,7 @@ table.qt th:first-child,table.qt td:first-child{text-align:left}
 .bub .rt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:860px){.obs-goals{grid-template-columns:1fr}.bub{font-size:13px}.bub .th{font-size:14px}}
 /* ===== 발표 화면 (1920×1080 무대를 화면에 맞춰 축소) ===== */
-body.presenting{background:#0b1022;overflow:hidden}
+body.presenting,html:has(body.presenting){background:#0b1022;overflow:hidden}
 .stage{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:#fff;overflow:hidden;color:#1F2937;font-family:"Noto Sans KR","Malgun Gothic",sans-serif}
 .sl{position:absolute;inset:0;padding:198px 96px 150px;display:flex;flex-direction:column;gap:40px;background:#fff}
 .sl *{margin:0}
@@ -308,7 +314,7 @@ const QUIZ=[
 ];
 const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const APP_VERSION="v1.5.0",APP_DATE="2026-11-11";
+const APP_VERSION="v1.6.0",APP_DATE="2026-11-11";
 const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"present",n:"발표 화면(PPT)",c:"#B45309",k:"P"},{id:"observer",n:"참관 (보기 전용)",c:"#6B7280",k:"참"}];
 const ACCOUNTS=[{id:"g1",n:"1모둠"},{id:"g2",n:"2모둠"},{id:"g3",n:"3모둠"},{id:"observer",n:"참관 (보기 전용)"},{id:"present",n:"발표 화면(PPT)"},{id:"teacher",n:"교사 (나)"}];
 const canPresent=r=>r==="teacher"||r==="observer"||r==="present";
@@ -373,7 +379,11 @@ function save(id,delay){
 async function resume(){
   if(DEMO)return;
   const {data}=await sb.auth.getSession();
-  if(data&&data.session){S.user=data.session.user;S.role=roleOf(S.user.email);await startSync()}
+  if(!(data&&data.session))return;
+  const r=new URLSearchParams(location.search).get("r");
+  // 짧은 주소/QR로 다른 계정을 지정해 들어왔으면, 남아 있던 로그인은 끊고 로그인 화면을 보여줌 (공용 컴퓨터 보호)
+  if(r&&r!==roleOf(data.session.user.email)){try{await sb.auth.signOut()}catch(e){}render();return}
+  S.user=data.session.user;S.role=roleOf(S.user.email);await startSync();
 }
 
 /* ================================================================== helpers */
@@ -416,7 +426,12 @@ function render(fromData){
   tick();
 }
 
-let loginRole="g1";
+// 짧은 주소(/p, /1, /2, /3, /t, /o)나 QR로 들어오면 해당 버튼을 미리 선택
+const SHORT={g1:"1",g2:"2",g3:"3",teacher:"t",present:"p",observer:"o"};
+const BASE_URL=location.origin+location.pathname.replace(/[^/]*$/,"");
+const shortUrl=id=>BASE_URL+SHORT[id];
+let loginRole=(()=>{const r=new URLSearchParams(location.search).get("r");return ROLES.some(x=>x.id===r)?r:"g1"})();
+const qrSvg=(text,cell)=>{try{const q=qrcode(0,"M");q.addData(text);q.make();return q.createSvgTag({cellSize:cell||4,margin:2,scalable:true})}catch(e){return ""}};
 function loginHTML(){
   return `<div class="login"><section class="left">
       <img src="assets/logo-white.png" alt="인천산업정보학교">
@@ -551,6 +566,9 @@ function teacherHTML(){
    <div class="section-h"><h2>나의 권리 카드 · 학생들의 생각</h2><span class="note">${allCards().length}명 작성 · 실시간</span></div>
    ${wallBox(560)}
    <div class="wall" style="margin-top:12px">${allCards().map(c=>`<div class="rcard"><b>${esc(c.name||"이름 없음")}</b> <span class="note">${c.g.slice(1)}모둠</span>${(c.thought||"").trim()?`<br><b>“${esc(c.thought)}”</b>`:""}${(c.right||"").trim()?`<br>${esc(c.right)}`:""}${(c.how||"").trim()?`<br><span class="muted">→ ${esc(c.how)}</span>`:""}</div>`).join("")}</div>
+   <div class="section-h"><h2>태블릿 접속 QR · 짧은 주소</h2><span class="note">찍거나 주소를 입력하면 해당 버튼이 선택된 로그인 화면이 열려요</span><span class="space"></span><button class="btn sm" id="qrPrint">QR 카드 인쇄</button></div>
+   <div class="card"><div class="qrgrid">${ROLES.map(r=>`<div class="qrc"><div class="qrimg">${qrSvg(shortUrl(r.id))}</div><b>${r.n}</b><span>${esc(shortUrl(r.id).replace(/^https?:\/\//,""))}</span></div>`).join("")}</div>
+    <p class="note" style="margin-top:8px">QR과 주소에는 비밀번호가 들어 있지 않아요. 학생은 QR을 찍은 뒤 비밀번호만 입력하면 됩니다. 공용 컴퓨터는 ‘발표 화면(PPT)’ 짧은 주소로 들어가세요.</p></div>
    <div class="section-h"><h2>계정 비밀번호 설정</h2><span class="note">교사만 바꿀 수 있어요 · 6~64자</span></div>
    <div class="card">${DEMO?'<p class="muted">체험 모드에서는 비밀번호를 바꿀 수 없어요.</p>':ACCOUNTS.map(a=>`<div class="pwrow"><b>${a.n}</b><input type="text" autocomplete="off" spellcheck="false" data-pw="${a.id}" placeholder="새 비밀번호 (6자 이상)"><button class="btn sm" data-pwset="${a.id}">바꾸기</button><span class="msg" id="pwmsg-${a.id}"></span></div>`).join("")}
     <p class="note" style="margin-top:10px">바꾼 비밀번호는 다시 볼 수 없으니 로그인 카드에 적어 두세요. 이미 로그인한 태블릿은 그대로 쓰이고, 다음 로그인부터 새 비밀번호가 필요합니다.</p></div>
@@ -625,6 +643,11 @@ function bindTeacher(){
   $("#tReveal").onclick=()=>setControl({reveal:!c.reveal});
   document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present));
   $("#resetAll").onclick=()=>$("#confirm").classList.add("on");
+  $("#qrPrint").onclick=()=>{
+    const cards=["g1","g2","g3","observer","observer","present"].map(id=>{const r=ROLES.find(x=>x.id===id);return `<div class="c"><div class="h">하린의 첫 직장 한 달 · 수업도구</div><div class="q">${qrSvg(shortUrl(id),6)}</div><div class="n">${r.n}</div><div class="u">${esc(shortUrl(id).replace(/^https?:\/\//,""))}</div><div class="p">비밀번호 : ____________________</div></div>`}).join("");
+    const w=window.open("","_blank");if(!w){toast("팝업이 막혀 있어요. 팝업을 허용해 주세요");return}
+    w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>태블릿 접속 QR 카드</title><style>body{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;margin:0;padding:12mm}.g{display:grid;grid-template-columns:1fr 1fr;gap:8mm}.c{border:2px solid #1B2D5B;border-top:10px solid #F59E0B;border-radius:6mm;padding:6mm;text-align:center;break-inside:avoid}.h{font-size:11pt;color:#6B7280}.q svg{width:55mm;height:55mm}.n{font-size:20pt;font-weight:900;color:#1B2D5B}.u{font-size:11pt;color:#374151;margin-top:2mm}.p{font-size:12pt;margin-top:5mm;text-align:left}</style></head><body><div class="g">${cards}</div><script>onload=()=>print()<\/script></body></html>`);w.document.close();
+  };
   document.querySelectorAll("[data-pwset]").forEach(b=>b.onclick=async()=>{
     const id=b.dataset.pwset,inp=document.querySelector(`[data-pw="${id}"]`),msg=$("#pwmsg-"+id),pw=inp.value.trim();
     if(pw.length<6){msg.innerHTML='<span style="color:var(--no)">6자 이상으로 입력해 주세요</span>';return}
@@ -723,8 +746,8 @@ const SLIDES=[
    <div style="display:flex;gap:24px;background:#F3F4F6;border-left:12px solid #1B2D5B;border-radius:20px;padding:24px 36px;align-items:center"><p style="font-size:28px;font-weight:900;color:#1B2D5B;flex:none">모둠 역할</p><p style="font-size:28px;line-height:1.45;color:#374151"><b>판단자</b> 문제 상황 고르기 · <b>근거 탐색자</b> 근거 카드 찾기 · <b>대변인</b> 하린의 대사 쓰고 발표하기</p></div>
    <div style="display:flex;gap:28px;align-items:stretch;flex:1">
     <div style="flex:none;width:600px;background:#1B2D5B;border-radius:24px;padding:24px 40px;color:#fff;display:flex;flex-direction:column;justify-content:center;gap:4px"><p id="pPhase" style="font-size:28px;font-weight:700;color:#F59E0B">모둠 활동 남은 시간</p><p id="pTimer" style="font-size:128px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">18:00</p></div>
-    <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px">${["g1","g2","g3"].map(g=>{const d=STEP_DONE(g);return `<div style="background:#fff;border:2px solid #E5E7EB;border-top:10px solid ${GROUP_COLORS[g]};border-radius:18px;padding:18px 20px"><p style="font-size:28px;font-weight:900;color:#1B2D5B;margin-bottom:10px">${GNAME[g]}</p>${STEP_NAMES.map((s,k)=>`<span class="chip ${d[k]?"ok":""}" style="font-size:20px;padding:3px 12px;margin:0 6px 6px 0">${d[k]?"✓ ":""}${s}</span>`).join("")}</div>`}).join("")}</div>
-   </div>${FTR("수업도구: mentorsang-boop.github.io/harin-class · 모둠 버튼 → 비밀번호",n)}</div>`},
+    <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px">${["g1","g2","g3"].map(g=>{const d=STEP_DONE(g);return `<div style="background:#fff;border:2px solid #E5E7EB;border-top:10px solid ${GROUP_COLORS[g]};border-radius:18px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="flex:none;width:150px;height:150px">${qrSvg(shortUrl(g),4).replace("<svg ","<svg width=\"150\" height=\"150\" ")}</div><div style="flex:1;min-width:0"><p style="font-size:28px;font-weight:900;color:#1B2D5B">${GNAME[g]}</p><p style="font-size:20px;color:#6B7280;margin-bottom:8px;word-break:break-all">${esc(shortUrl(g).replace(/^https?:\/\//,""))}</p>${STEP_NAMES.map((s,k)=>`<span class="chip ${d[k]?"ok":""}" style="font-size:18px;padding:2px 10px;margin:0 5px 5px 0">${d[k]?"✓ ":""}${s}</span>`).join("")}</div></div>`}).join("")}</div>
+   </div>${FTR("모둠 태블릿: QR을 찍고 비밀번호 입력 · 발표 화면: "+esc(shortUrl("present").replace(/^https?:\/\//,"")),n)}</div>`},
  {live:true,notes:"1모둠 발표 화면입니다. 모둠이 작성한 판단·근거·대사가 실시간으로 보입니다. 교사 화면에서 ‘해설 공개’를 켜면 맞은 것(✓)과 틀린 것(✗), 놓친 것이 표시됩니다.",html:n=>pGroupResult("g1",n)},
  {notes:"1모둠 발표 뒤에 띄웁니다. 근로계약서와 최저임금은 직원 5명 미만 작은 빵집에도 똑같이 적용된다는 점을 꼭 짚습니다. 2026년 최저임금은 10,320원, 2027년은 10,700원.",html:n=>pScene("g1",n,"장면 1 정리 · 근로계약 · 최저임금","계약서는 ‘나중에’가 아니라 <span style=\"color:#D97706\">일을 시작할 때</span>","assets/scene1.jpg","#F59E0B",
    `<div class="cy"><h3 style="font-size:32px;font-weight:900;color:#B45309">문제 상황</h3><p style="font-size:28px;line-height:1.5">3주째 근로계약서를 쓰지 않음</p><p style="font-size:28px;line-height:1.5">시급 10,000원은 2027년 최저임금 10,700원보다 적음</p></div>
