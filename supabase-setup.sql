@@ -87,3 +87,9 @@ create policy "harin cards group delete" on public.harin_cards for delete to aut
   using ((select auth.jwt() ->> 'email') = grp || '@harin.example.com' or (select auth.jwt() ->> 'email') = 'teacher@harin.example.com');
 grant select, insert, delete on public.harin_cards to authenticated;
 alter publication supabase_realtime add table public.harin_cards;
+
+-- v1.9.2 · 기기 시계가 달라도 타이머가 맞도록 서버 시각 제공
+create or replace function public.harin_now() returns bigint
+language sql stable set search_path = '' as $$ select (extract(epoch from clock_timestamp())*1000)::bigint $$;
+revoke all on function public.harin_now() from public;
+grant execute on function public.harin_now() to authenticated;

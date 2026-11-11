@@ -334,7 +334,7 @@ const QUIZ=[
 ];
 const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const APP_VERSION="v1.9.1",APP_DATE="2026-11-11";
+const APP_VERSION="v1.9.2",APP_DATE="2026-11-11";
 const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"present",n:"발표 화면(PPT)",c:"#B45309",k:"P"},{id:"observer",n:"참관 (보기 전용)",c:"#6B7280",k:"참"}];
 const ACCOUNTS=[{id:"g1",n:"1모둠"},{id:"g2",n:"2모둠"},{id:"g3",n:"3모둠"},{id:"observer",n:"참관 (보기 전용)"},{id:"present",n:"발표 화면(PPT)"},{id:"teacher",n:"교사 (나)"}];
 const canPresent=r=>r==="teacher"||r==="observer"||r==="present";
@@ -388,7 +388,8 @@ async function startSync(){
   const {data,error}=await sb.from("lesson_state").select("id,data");
   if(error){S.net="error";setNet();toast("기록을 불러오지 못했어요: "+error.message);return}
   data.forEach(r=>applyRow(r,false));
-  await loadCards();
+  PRES.jumpSeen=S.control.jump||0; // 들어온 시점의 단계 신호는 이미 지난 것으로 봄
+  await Promise.all([loadCards(),syncClock()]);
   if(S.role==="teacher"||S.role==="present")await loadQrKeys();
   S.channel=sb.channel("lesson_state_changes")
     .on("postgres_changes",{event:"*",schema:"public",table:"lesson_state"},p=>{applyRow(p.new,true);render(p.new&&p.new.id==="deck"?false:true)})
@@ -421,6 +422,31 @@ async function deleteCard(id){
   if(error){toast("지우지 못했어요: "+error.message);return false}
   S.cards=S.cards.filter(c=>c.id!==id);return true;
 }
+/* 기기마다 시계가 달라도 타이머·PPT 넘김이 맞도록 Supabase 서버 시계 기준으로 맞춤 */
+let CLOCK=0;const nowMs=()=>Date.now()+CLOCK;
+async function syncClock(){
+  if(DEMO)return;let best=null;
+  for(let k=0;k<3;k++){const t0=Date.now();const {data,error}=await sb.rpc("harin_now");const t1=Date.now();
+    if(error||typeof data!=="number")continue;const rtt=t1-t0;if(!best||rtt<best.rtt)best={rtt,off:data-(t0+t1)/2}}
+  if(best)CLOCK=Math.round(best.off);
+}
+/* 실시간 연결이 학교망에서 막히거나 끊겨도 몇 초마다 다시 읽어 와서 맞춤 */
+let lastPoll=0;
+async function pollState(){
+  if(DEMO||!S.user||document.hidden)return;
+  const live=S.net==="live",pres=S.role==="present"||PRES.on;
+  if(live&&!pres)return;
+  const q=sb.from("lesson_state").select("id,data");
+  const {data,error}=live?await q.eq("id","control"):await q;
+  if(error||!data)return;
+  let changed=false;
+  data.forEach(r=>{const cur=r.id==="control"?S.control:r.id==="deck"?S.deck:S.groups[r.id];
+    if(JSON.stringify(cur)!==JSON.stringify(Object.assign(r.id==="control"?blankControl():r.id==="deck"?{}:blankGroup(),r.data||{}))){applyRow(r,true);changed=true}});
+  if(!live){await loadCards();changed=true}
+  if(changed)render(true);
+}
+setInterval(pollState,3000);
+setInterval(()=>{if(S.user)syncClock()},120000);
 const pending={},timers={},saveSeq={};
 function save(id,delay){
   if(DEMO){saveDemo();return}
@@ -461,7 +487,7 @@ async function resume(){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("on"),2800)}
-function remainingMs(){const c=S.control;return c.running?Math.max(0,c.endsAt-Date.now()):Math.max(0,c.remaining)}
+function remainingMs(){const c=S.control;return c.running?Math.max(0,c.endsAt-nowMs()):Math.max(0,c.remaining)}
 const fmt=ms=>{const s=Math.ceil(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
 function quizScore(gs){return gs.quiz.reduce((a,v,i)=>a+(v===QUIZ[i].a?1:0),0)}
 function setNet(){
@@ -719,12 +745,12 @@ addEventListener("resize",()=>{fillWalls();if(PRES.on)fitStage()});
 function setControl(patch){Object.assign(S.control,patch);save("control",0);render()}
 function bindTeacher(){
   const c=S.control;
-  $("#tPlay").onclick=()=>{if(c.running)setControl({running:false,remaining:Math.max(0,c.endsAt-Date.now())});
+  $("#tPlay").onclick=()=>{if(c.running)setControl({running:false,remaining:Math.max(0,c.endsAt-nowMs())});
     else{const first=c.remaining>=PHASES[c.phase].m*60000-1000; // 이 단계를 처음 시작할 때만 PPT도 첫 슬라이드로 (일시정지 후 다시 시작은 그대로)
-      setControl(Object.assign({running:true,endsAt:Date.now()+c.remaining},first?{jump:Date.now()}:{}))}};
+      setControl(Object.assign({running:true,endsAt:nowMs()+c.remaining},first?{jump:nowMs()}:{}))}};
   $("#tReset").onclick=()=>setControl({running:false,remaining:PHASES[c.phase].m*60000});
-  $("#tNext").onclick=()=>{const p=Math.min(PHASES.length-1,c.phase+1);setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:Date.now()})};
-  document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const p=+b.dataset.ph;setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:Date.now()})});
+  $("#tNext").onclick=()=>{const p=Math.min(PHASES.length-1,c.phase+1);setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:nowMs()})};
+  document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const p=+b.dataset.ph;setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:nowMs()})});
   $("#tReveal").onclick=()=>setControl({reveal:!c.reveal});
   document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present));
   $("#resetAll").onclick=()=>$("#confirm").classList.add("on");
@@ -936,7 +962,7 @@ SLIDES.forEach((s,i)=>s.id=SLIDE_IDS[i]||("s"+i));
 const PHASE_SLIDE=["then","harin","howto","g1","month"]; // 도입·안내·모둠 활동·공유·정리
 function phaseJump(){
   const j=S.control.jump||0,seen=PRES.jumpSeen;PRES.jumpSeen=j;
-  if(!j||j===seen||PRES.edit||Math.abs(Date.now()-j)>60000)return false;
+  if(seen===undefined||!j||j===seen||PRES.edit)return false; // 시계 차이와 상관없이 ‘새 신호’면 넘김
   const k=SLIDE_IDS.indexOf(PHASE_SLIDE[S.control.phase]);
   if(k<0||k===PRES.i)return false;
   PRES.i=k;try{sessionStorage.setItem("harin-pres-i",k)}catch(e){}return true;
