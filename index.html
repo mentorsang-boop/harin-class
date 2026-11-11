@@ -329,7 +329,7 @@ const QUIZ=[
 ];
 const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const APP_VERSION="v1.7.0",APP_DATE="2026-11-11";
+const APP_VERSION="v1.8.0",APP_DATE="2026-11-11";
 const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"present",n:"발표 화면(PPT)",c:"#B45309",k:"P"},{id:"observer",n:"참관 (보기 전용)",c:"#6B7280",k:"참"}];
 const ACCOUNTS=[{id:"g1",n:"1모둠"},{id:"g2",n:"2모둠"},{id:"g3",n:"3모둠"},{id:"observer",n:"참관 (보기 전용)"},{id:"present",n:"발표 화면(PPT)"},{id:"teacher",n:"교사 (나)"}];
 const canPresent=r=>r==="teacher"||r==="observer"||r==="present";
@@ -587,7 +587,7 @@ function teacherHTML(){
      <div><div class="note">현재 단계</div><div style="font-size:24px;font-weight:900;color:var(--navy)">${PHASES[c.phase].n} <span class="note">(${PHASES[c.phase].m}분)</span></div></div>
      <div class="phases">${PHASES.map((p,i)=>`<button class="ph ${i===c.phase?"on":i<c.phase?"past":""}" data-ph="${i}">${p.n} ${p.m}′</button>`).join("")}</div>
      <div class="bigtime" id="bigTime">${fmt(remainingMs())}</div></div>
-     <div class="row"><button class="btn" id="tPlay">${c.running?"일시정지":"시작"}</button><button class="btn ghost" id="tReset">이 단계 다시</button><button class="btn ghost" id="tNext">다음 단계 →</button>
+     <div class="row"><button class="btn" id="tPlay">${c.running?"일시정지":"시작"}</button><button class="btn ghost" id="tReset">이 단계 다시</button><button class="btn ghost" id="tNext">다음 단계 →</button><span class="note">단계를 누르면 발표 화면(PPT)도 그 단계 첫 슬라이드로 넘어갑니다</span>
      <span class="space"></span>
      <button class="btn ${c.reveal?"orange":"ghost"}" id="tReveal">${c.reveal?"해설 공개 중 (끄기)":"해설 공개하기"}</button></div></div>
    <div class="tcols">${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g];return `<div class="card gcol" style="border-top-color:${GROUP_COLORS[g]}">
@@ -676,8 +676,8 @@ function bindTeacher(){
   const c=S.control;
   $("#tPlay").onclick=()=>{if(c.running)setControl({running:false,remaining:Math.max(0,c.endsAt-Date.now())});else setControl({running:true,endsAt:Date.now()+c.remaining})};
   $("#tReset").onclick=()=>setControl({running:false,remaining:PHASES[c.phase].m*60000});
-  $("#tNext").onclick=()=>{const p=Math.min(PHASES.length-1,c.phase+1);setControl({phase:p,running:false,remaining:PHASES[p].m*60000})};
-  document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const p=+b.dataset.ph;setControl({phase:p,running:false,remaining:PHASES[p].m*60000})});
+  $("#tNext").onclick=()=>{const p=Math.min(PHASES.length-1,c.phase+1);setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:Date.now()})};
+  document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const p=+b.dataset.ph;setControl({phase:p,running:false,remaining:PHASES[p].m*60000,jump:Date.now()})});
   $("#tReveal").onclick=()=>setControl({reveal:!c.reveal});
   document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present));
   $("#resetAll").onclick=()=>$("#confirm").classList.add("on");
@@ -866,6 +866,15 @@ function pRightsCards(n){
 }
 const SLIDE_IDS=["cover","then","question","goals","harin","scenes","howto","g1","scene1","g2","scene2","g3","scene3","month","quiz","mycard","wall","cards"];
 SLIDES.forEach((s,i)=>s.id=SLIDE_IDS[i]||("s"+i));
+/* 교사 화면에서 단계를 누르면 발표 화면이 그 단계의 첫 슬라이드로 넘어감 */
+const PHASE_SLIDE=["then","harin","howto","g1","month"]; // 도입·안내·모둠 활동·공유·정리
+function phaseJump(){
+  const j=S.control.jump||0,seen=PRES.jumpSeen;PRES.jumpSeen=j;
+  if(!j||j===seen||PRES.edit||Math.abs(Date.now()-j)>60000)return false;
+  const k=SLIDE_IDS.indexOf(PHASE_SLIDE[S.control.phase]);
+  if(k<0||k===PRES.i)return false;
+  PRES.i=k;try{sessionStorage.setItem("harin-pres-i",k)}catch(e){}return true;
+}
 /* ---------- PPT 편집 (교사 계정만) ---------- */
 function cleanHTML(h){ // 굵게·기울임·밑줄·줄바꿈·글자색만 남김
   const t=document.createElement("template");t.innerHTML=h;
@@ -905,7 +914,8 @@ function renderPresent(fromData){
   const root=$("#root"),s=SLIDES[PRES.i],isT=S.role==="teacher";
   if(!isT)PRES.edit=false;
   document.body.classList.add("presenting");
-  if(fromData&&$("#stage")){
+  const jumped=phaseJump();
+  if(fromData&&$("#stage")&&!jumped){
     if(!s.live||(PRES.edit&&document.activeElement&&document.activeElement.isContentEditable)){tick();setNet();return}
   }
   root.innerHTML=`<div class="stage" id="stage">${s.html(PRES.i+1)}</div>
