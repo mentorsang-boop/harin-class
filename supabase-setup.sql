@@ -12,7 +12,7 @@ alter table public.lesson_state enable row level security;
 
 create policy "harin class accounts read" on public.lesson_state
   for select to authenticated
-  using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','g1@harin.example.com','g2@harin.example.com','g3@harin.example.com'));
+  using ((select auth.jwt() ->> 'email') in ('teacher@harin.example.com','g1@harin.example.com','g2@harin.example.com','g3@harin.example.com','observer@harin.example.com'));
 
 create policy "harin teacher writes all" on public.lesson_state
   for update to authenticated

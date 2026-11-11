@@ -160,6 +160,38 @@ table.qt th:first-child,table.qt td:first-child{text-align:left}
 .confirm .panel{max-width:440px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
 .toast.on{opacity:1}
+.role:last-child{grid-column:span 2}
+.scene-img{width:100%;max-height:420px;object-fit:cover;border-radius:12px;margin-top:14px;border:1px solid var(--line);background:var(--bg)}
+.scene-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-top:10px;border:1px solid var(--line);background:var(--bg)}
+.prog{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.prog span{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--bg);color:var(--muted)}
+.prog span.on{background:var(--ok-l);color:var(--ok)}
+.obs-goals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.obs-goals div{background:var(--blue-l);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5}
+.obs-goals b{color:var(--navy)}
+/* bubble wall */
+.wallov{position:fixed;inset:0;z-index:70;display:none;background:radial-gradient(circle at 50% 55%,#24407e 0,#1B2D5B 60%);overflow:hidden}
+.wallov.on{display:block}
+.wallov .wtitle{position:absolute;left:28px;top:20px;color:#fff;z-index:3}
+.wallov .wtitle h2{font-size:30px;font-weight:900}
+.wallov .wtitle h2 span{color:var(--orange)}
+.wallov .wtitle p{color:#C7D2FE;margin:6px 0 0;font-size:15px}
+.wallov .wclose{position:absolute;right:24px;top:20px;z-index:4}
+.wallov .wcount{position:absolute;right:24px;bottom:20px;color:#C7D2FE;font-size:15px;z-index:3}
+.wharin-bg{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);width:min(48vh,440px);height:min(48vh,440px);border-radius:50%;background:#fff;z-index:1;overflow:hidden;border:8px solid var(--orange);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.wharin{position:absolute;left:50%;top:6%;transform:translateX(-50%);height:150%}
+.wharin-name{position:absolute;left:50%;top:calc(55% + min(24vh,220px) + 10px);transform:translateX(-50%);z-index:2;background:var(--orange);color:#1F2937;font-weight:900;border-radius:999px;padding:6px 16px;font-size:16px;white-space:nowrap}
+.bub{position:absolute;z-index:3;background:#fff;color:var(--ink);border-radius:22px;padding:10px 14px 12px;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:floaty 6s ease-in-out infinite, pop .5s ease-out both;line-height:1.5;font-size:15px}
+.bub::after{content:"";position:absolute;width:18px;height:18px;background:inherit;bottom:-7px;left:var(--tail,30%);transform:rotate(45deg);border-radius:3px}
+.bub .who{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);margin:0 0 4px;padding:0;background:none}
+.bub .who i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.bub .th{font-weight:900;font-size:17px;color:var(--navy)}
+.bub .rt{font-size:13.5px;color:#374151;margin-top:4px}
+.bub.g1{border-top:6px solid var(--g1)}.bub.g2{border-top:6px solid var(--g2)}.bub.g3{border-top:6px solid #6366F1}
+@keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -14px}}
+@keyframes pop{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
+.bub .rt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:860px){.obs-goals{grid-template-columns:1fr}.bub{font-size:13px}.bub .th{font-size:14px}}
 .foot{display:flex;align-items:center;gap:10px;margin-top:28px;color:var(--muted);font-size:12.5px}
 .foot img{height:22px}
 @media (max-width:860px){.login{grid-template-columns:1fr}.login .left{padding:40px 28px 40px 44px}.login h1{font-size:38px}.tcols{grid-template-columns:1fr}.tbar{grid-template-columns:1fr}.qopts{grid-template-columns:1fr}}
@@ -173,6 +205,13 @@ table.qt th:first-child,table.qt td:first-child{text-align:left}
   <p class="muted" style="line-height:1.6">세 모둠의 판단·근거·대사·퀴즈·권리 카드와 타이머가 처음 상태로 돌아갑니다. 리허설 뒤 본수업 전에 사용하세요.</p>
   <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" id="cfNo">취소</button><button class="btn orange" id="cfYes">모두 지우기</button></div>
 </div></div>
+<div class="wallov" id="wall">
+  <div class="wtitle"><h2>하린과 함께 나누는 <span>우리의 노동인권 생각</span></h2><p>나의 권리 카드에 쓴 생각이 실시간으로 떠오릅니다</p></div>
+  <button class="btn sm light wclose" id="wallClose">닫기</button>
+  <div class="wharin-bg"><img class="wharin" src="assets/harin-full.png" alt="하린"></div><div class="wharin-name">신입 제빵사 하린</div>
+  <div id="bubbles"></div>
+  <div class="wcount" id="wallCount"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -240,9 +279,12 @@ const QUIZ=[
  {q:"다음 중 직장 내 괴롭힘으로 보기 어려운 것은?",o:["다른 직원 앞에서 반복해서 모욕하기","단톡방에 실수 사진 올려 놀리기","업무에 필요한 내용을 정확히 지적하기","일부러 업무에서 계속 빼기"],a:2,ex:"업무상 적정한 범위의 지적은 괴롭힘이 아님. 범위를 넘는 모욕·따돌림이 괴롭힘."},
  {q:"안전장치가 고장 난 기계를 그냥 쓰라고 할 때 가장 먼저 할 일은?",o:["빨리 끝내고 나중에 말한다","작업을 멈추고 관리자에게 보고한다","선배에게 대신 하라고 한다","조심해서 그냥 사용한다"],a:1,ex:"급박한 위험이 있으면 작업을 멈추고 대피할 수 있고, 이를 이유로 불이익을 주면 안 됨 (산업안전보건법 제52조)."}
 ];
-const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",right:"",how:""},{name:"",right:"",how:""},{name:"",right:"",how:""}]});
+const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"}];
+const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"observer",n:"참관 선생님 (보기 전용)",c:"#6B7280",k:"참"}];
+const SCENE_IMG={g1:"assets/scene1.jpg",g2:"assets/scene2.jpg",g3:"assets/scene3.jpg"};
+const STEP_DONE=g=>{const gs=S.groups[g];return [gs.sel.length>0,gs.ev.length>0,gs.submitted,gs.quizDone,gs.cards.some(c=>(c.right||c.thought||"").trim())]};
+const allCards=()=>["g1","g2","g3"].flatMap(g=>S.groups[g].cards.filter(c=>(c.thought||c.right||"").trim()).map((c,i)=>Object.assign({g,i},c)));
 
 /* ================================================================== backend */
 const CFG=window.HARIN_CONFIG||{};
@@ -320,15 +362,18 @@ function render(fromData){
     const a=document.activeElement;
     if(a&&(a.tagName==="TEXTAREA"||a.tagName==="INPUT")&&root.contains(a)){tick();return}
   }
-  const isT=S.role==="teacher";
+  const isT=S.role==="teacher",isO=S.role==="observer";
   root.innerHTML=`<header class="topbar"><div class="in">
       <div class="row"><img src="assets/logo-white.png" alt="인천산업정보학교"><span class="title">하린의 첫 직장 한 달</span></div>
       <div class="right"><span class="pill"><span id="phaseName">${PHASES[S.control.phase].n}</span><span class="t" id="timerSmall">${fmt(remainingMs())}</span></span>
-      <span class="net" id="net"></span><span class="who-pill">${isT?"교사":esc(S.role.slice(1))+"모둠"}</span><button class="btn sm light" id="logout">로그아웃</button></div></div></header>
-    <main class="wrap">${isT?teacherHTML():groupHTML(S.role)}
+      <span class="net" id="net"></span><span class="who-pill">${isT?"교사":isO?"참관":esc(S.role.slice(1))+"모둠"}</span><button class="btn sm light" id="wallOpen">생각 말풍선</button><button class="btn sm light" id="logout">로그아웃</button></div></div></header>
+    <main class="wrap">${isT?teacherHTML():isO?observerHTML():groupHTML(S.role)}
       <div class="foot"><img src="assets/logo-blue.png" alt="">노동인권교육 · 제빵 수업 연계</div></main>`;
-  $("#logout").onclick=logout;setNet();
-  if(isT){bindTeacher();if($("#present").classList.contains("on")&&presentG)openPresent(presentG)}else bindGroup(S.role);
+  $("#logout").onclick=logout;$("#wallOpen").onclick=openWall;setNet();
+  if(isT){bindTeacher();if($("#present").classList.contains("on")&&presentG)openPresent(presentG)}
+  else if(isO){document.querySelectorAll("[data-present]").forEach(b=>b.onclick=()=>openPresent(b.dataset.present))}
+  else bindGroup(S.role);
+  if($("#wall").classList.contains("on"))drawWall();
   tick();
 }
 
@@ -362,7 +407,7 @@ function bindLogin(){
 }
 
 const STEPS=["장면 읽기","① 판단","② 근거","③ 행동","출구 퀴즈","나의 권리 카드"];
-function stepDone(g,i){const gs=S.groups[g];return [true,gs.sel.length>0,gs.ev.length>0,gs.submitted,gs.quizDone,gs.cards.some(c=>c.right.trim())][i]&&i>0}
+function stepDone(g,i){return i>0&&STEP_DONE(g)[i-1]}
 const HEADS={g1:"assets/harin-head-worry.png",g2:"assets/harin-head-sweat.png",g3:"assets/harin-head-speak.png"};
 function harinSVG(g){return `<img src="${g?HEADS[g]:"assets/harin-face.png"}" alt="하린" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--orange);background:#fff">`}
 
@@ -372,6 +417,7 @@ function groupHTML(g){
   if(step===0){
     body=`<div class="card"><span class="scene-tag">${sc.tag} · ${esc(sc.topic)}</span>
       <h2 style="margin-top:10px;font-size:24px;color:var(--navy)">${sc.title}</h2>
+      <img class="scene-img" src="${SCENE_IMG[g]}" alt="${esc(sc.tag)} 상황 그림" onerror="this.remove()">
       <p class="story">${sc.story}</p>
       <div class="who">${harinSVG(g)}<div><b>모둠 역할 나누기</b><div class="note" style="margin-top:4px">판단자: 문제 상황을 고르는 사람 · 근거 탐색자: 근거 카드를 찾는 사람 · 대변인: 하린의 대사를 쓰고 발표하는 사람</div></div></div>
       <div class="row" style="margin-top:16px"><span class="space"></span><button class="btn" data-step="1">판단하러 가기 →</button></div></div>`;
@@ -404,11 +450,14 @@ function groupHTML(g){
       <div class="row">${gs.quizDone?`<b style="font-size:18px">${quizScore(gs)} / 5 정답</b>`:""}<span class="space"></span>
       ${gs.quizDone?"":`<button class="btn orange" id="qsubmit" ${gs.quiz.some(v=>v===null)?"disabled":""}>채점하기</button>`}</div></div>`;
   }else if(step===5){
-    body=`<div class="card"><p class="q-lead">나의 권리 카드 — 한 사람씩, 내년 봄 꼭 기억할 것 하나</p>
+    body=`<div class="card"><p class="q-lead">나의 권리 카드 — 모둠원 한 사람씩 모두 써 주세요</p>
+      <p class="note" style="margin:-4px 0 12px">‘노동인권에 대한 내 생각 한마디’는 하린 주위에 말풍선으로 떠올라 반 전체가 함께 봅니다.</p>
       <div class="cardform">${gs.cards.map((c,i)=>`<div class="rc"><label>이름</label><input data-card="${i}" data-f="name" value="${esc(c.name)}" placeholder="이름">
+        <label>노동인권에 대한 내 생각 한마디 (말풍선)</label><input data-card="${i}" data-f="thought" value="${esc(c.thought||"")}" placeholder="예) 일한 만큼 당당하게 받는 게 내 권리다">
         <label>내가 꼭 기억할 권리</label><input data-card="${i}" data-f="right" value="${esc(c.right)}" placeholder="예) 근로계약서는 일 시작 전에 받는다">
         <label>그런 일이 생기면 나는</label><input data-card="${i}" data-f="how" value="${esc(c.how)}" placeholder="예) 기록을 남기고 1350에 상담한다"></div>`).join("")}</div>
-      <p class="note" style="margin-top:10px">입력하면 자동으로 저장되고 선생님 화면에 나타납니다.</p></div>`;
+      <div class="row" style="margin-top:12px">${gs.cards.length<6?`<button class="btn ghost sm" id="addCard">+ 모둠원 카드 추가</button>`:""}<span class="space"></span><button class="btn orange" onclick="openWall()">모두의 생각 말풍선 보기</button></div>
+      <p class="note" style="margin-top:10px">입력하면 자동으로 저장되고 말풍선 화면과 선생님 화면에 바로 나타납니다.</p></div>`;
   }
   return `<div class="ghead"><div class="gtitle"><span class="badge" style="background:${GROUP_COLORS[g]}">${num}모둠</span><h2 style="font-size:20px;color:var(--navy)">${sc.tag} · ${sc.title}</h2></div></div>
    <nav class="steps">${STEPS.map((s,i)=>`<button class="${i===step?"on":""} ${stepDone(g,i)?"done":""}" data-step="${i}">${s}</button>`).join("")}</nav>${body}`;
@@ -426,6 +475,7 @@ function bindGroup(g){
   document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{gs.quiz[+b.dataset.q]=+b.dataset.o;touch();render()});
   const qs=$("#qsubmit");if(qs)qs.onclick=()=>{gs.quizDone=true;touch();render()};
   document.querySelectorAll("[data-card]").forEach(inp=>inp.oninput=()=>{gs.cards[+inp.dataset.card][inp.dataset.f]=inp.value;touch()});
+  const ac=$("#addCard");if(ac)ac.onclick=()=>{gs.cards.push({name:"",thought:"",right:"",how:""});touch();render()};
 }
 
 /* ================================================================== teacher */
@@ -458,10 +508,67 @@ function teacherHTML(){
    <div class="card"><table class="qt"><thead><tr><th>모둠</th>${QUIZ.map((q,i)=>`<th>Q${i+1}</th>`).join("")}<th>합계</th></tr></thead><tbody>
     ${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g];return `<tr><td><b>${i+1}모둠</b></td>${QUIZ.map((q,k)=>`<td>${gs.quiz[k]===null?"–":gs.quizDone?(gs.quiz[k]===q.a?'<span style="color:var(--ok)">O</span>':'<span style="color:var(--no)">X</span>'):"…"}</td>`).join("")}<td><b>${gs.quizDone?quizScore(gs)+" / 5":"풀이 중"}</b></td></tr>`}).join("")}
     </tbody></table></div>
-   <div class="section-h"><h2>나의 권리 카드</h2></div>
-   <div class="wall">${["g1","g2","g3"].flatMap(g=>S.groups[g].cards.filter(c=>c.right.trim()).map(c=>`<div class="rcard"><b>${esc(c.name||"이름 없음")}</b> <span class="note">${g.slice(1)}모둠</span><br>${esc(c.right)}${c.how.trim()?`<br><span class="muted">→ ${esc(c.how)}</span>`:""}</div>`)).join("")||'<p class="muted">아직 작성된 카드가 없어요.</p>'}</div>
+   <div class="section-h"><h2>나의 권리 카드</h2><span class="note">${allCards().length}명 작성</span><span class="space"></span><button class="btn sm orange" onclick="openWall()">말풍선 화면 띄우기</button></div>
+   <div class="wall">${allCards().map(c=>`<div class="rcard"><b>${esc(c.name||"이름 없음")}</b> <span class="note">${c.g.slice(1)}모둠</span>${(c.thought||"").trim()?`<br><b>“${esc(c.thought)}”</b>`:""}${(c.right||"").trim()?`<br>${esc(c.right)}`:""}${(c.how||"").trim()?`<br><span class="muted">→ ${esc(c.how)}</span>`:""}</div>`).join("")||'<p class="muted">아직 작성된 카드가 없어요.</p>'}</div>
    <div class="row" style="margin-top:28px"><span class="space"></span><button class="btn sm ghost" id="resetAll">모든 기록 지우기</button></div>`;
 }
+/* ================================================================== observer (보기 전용) */
+function observerHTML(){
+  const c=S.control;
+  return `<div class="card" style="margin-bottom:14px">
+     <div class="row"><div><div class="note">지금 수업 단계</div><div style="font-size:26px;font-weight:900;color:var(--navy)">${PHASES[c.phase].n} <span class="note">(${PHASES[c.phase].m}분)</span></div></div>
+     <span class="space"></span><div class="bigtime" id="bigTime" style="font-size:44px">${fmt(remainingMs())}</div></div>
+     <div class="phases" style="margin-top:12px">${PHASES.map((p,i)=>`<span class="ph ${i===c.phase?"on":i<c.phase?"past":""}">${p.n} ${p.m}′</span>`).join("")}</div>
+     <p style="margin:16px 0 0;font-weight:700;color:var(--navy)">핵심 질문 · “내가 하린이라면 무엇을 알아차리고, 누구에게, 어떻게 말할까?”</p>
+     <div class="obs-goals"><div><b>① 판단</b><br>일터에서 생긴 일 중 노동인권 문제를 찾아 판단한다</div><div><b>② 근거</b><br>판단의 근거가 되는 법과 권리를 설명한다</div><div><b>③ 행동</b><br>대응 방법과 도움 경로를 골라 내 말로 표현한다</div></div>
+     <p class="note" style="margin:12px 0 0">참관용 보기 전용 화면입니다. 모둠 활동이 실시간으로 반영되며, 이 화면에서는 아무것도 바뀌지 않습니다.</p></div>
+   <div class="tcols">${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g],d=STEP_DONE(g);return `<div class="card gcol" style="border-top-color:${GROUP_COLORS[g]}">
+      <h3><span class="badge" style="background:${GROUP_COLORS[g]}">${i+1}모둠</span>${SCENES[g].tag}</h3>
+      <div class="note" style="margin-top:4px">${SCENES[g].title} · ${esc(SCENES[g].topic)}</div>
+      <img class="scene-thumb" src="${SCENE_IMG[g]}" alt="${esc(SCENES[g].tag)} 상황 그림" onerror="this.remove()">
+      <div class="prog">${["판단","근거","행동 제출","퀴즈","권리 카드"].map((s,k)=>`<span class="${d[k]?"on":""}">${d[k]?"✓ ":""}${s}</span>`).join("")}</div>
+      ${groupSummary(g)}
+      <div class="row" style="margin-top:12px"><span class="space"></span><button class="btn sm" data-present="${g}">크게 보기</button></div></div>`}).join("")}</div>
+   <div class="section-h"><h2>출구 퀴즈</h2><span class="note">모둠별 정답</span></div>
+   <div class="card"><table class="qt"><thead><tr><th>모둠</th>${QUIZ.map((q,i)=>`<th>Q${i+1}</th>`).join("")}<th>합계</th></tr></thead><tbody>
+    ${["g1","g2","g3"].map((g,i)=>{const gs=S.groups[g];return `<tr><td><b>${i+1}모둠</b></td>${QUIZ.map((q,k)=>`<td>${gs.quiz[k]===null?"–":gs.quizDone?(gs.quiz[k]===q.a?'<span style="color:var(--ok)">O</span>':'<span style="color:var(--no)">X</span>'):"…"}</td>`).join("")}<td><b>${gs.quizDone?quizScore(gs)+" / 5":"풀이 중"}</b></td></tr>`}).join("")}
+    </tbody></table></div>
+   <div class="section-h"><h2>학생들의 생각</h2><span class="note">${allCards().length}명 작성</span><span class="space"></span><button class="btn sm" onclick="openWall()">말풍선으로 크게 보기</button></div>`;
+}
+
+/* ================================================================== bubble wall */
+function openWall(){$("#wall").classList.add("on");drawWall()}
+$("#wallClose").onclick=()=>$("#wall").classList.remove("on");
+const bubbleSeen=new Set();
+function drawWall(){
+  const cards=allCards(),n=cards.length,box=$("#bubbles");
+  $("#wallCount").textContent=n?`${n}명의 생각`:"아직 올라온 생각이 없어요. 나의 권리 카드를 써 보세요.";
+  // 하린 원의 양옆을 칸으로 나눠 말풍선을 겹치지 않게 배치
+  const W=innerWidth,H=innerHeight,cx=W/2,R=Math.min(H*0.24,220)+24;
+  const BH=104,top=125,bot=H-45,sideW=cx-R-16;
+  const rows=Math.max(1,Math.floor((bot-top)/(BH+12)));
+  const maxCols=Math.max(1,Math.floor(sideW/165));
+  const cols=Math.min(maxCols,Math.max(1,Math.ceil(n/(2*rows)),Math.floor(sideW/(Math.min(270,W*0.2)+18))));
+  const BW=Math.min(270,sideW/cols-18);
+  const slots=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const y=top+(r+0.5)*((bot-top)/rows);
+    const xl=cx-R-(c+0.5)*(sideW/cols), xr=cx+R+(c+0.5)*(sideW/cols);
+    slots.push({x:xl,y,d:c},{x:xr,y,d:c});
+  }
+  slots.sort((a,b)=>a.d-b.d||Math.abs(a.y-H*0.55)-Math.abs(b.y-H*0.55));
+  box.innerHTML=cards.map((c,k)=>{
+    const s=slots[k%slots.length],lap=Math.floor(k/slots.length);
+    const x=s.x+((k*37)%21-10)+lap*24, y=s.y+((k*53)%17-8)+lap*18;
+    const key=c.g+c.i+(c.thought||"")+(c.right||"");const fresh=!bubbleSeen.has(key);bubbleSeen.add(key);
+    const main=(c.thought||"").trim()||(c.right||"").trim();
+    return `<div class="bub ${c.g}" style="left:${x}px;top:${y}px;width:${BW}px;transform:translate(-50%,-50%);animation-delay:${(k%5)*0.7}s,0s;--tail:${x<cx?"78%":"14%"}${fresh?"":";animation-name:floaty"}">
+      <p class="who"><i style="background:${GROUP_COLORS[c.g]}"></i>${esc(c.name||"이름 없음")} · ${c.g.slice(1)}모둠</p>
+      <div class="th">“${esc(main)}”</div>
+      ${(c.thought||"").trim()&&(c.right||"").trim()?`<div class="rt">💡 ${esc(c.right)}</div>`:""}</div>`}).join("");
+}
+addEventListener("resize",()=>{if($("#wall").classList.contains("on"))drawWall()});
+
 function setControl(patch){Object.assign(S.control,patch);save("control",0);render()}
 function bindTeacher(){
   const c=S.control;
@@ -476,7 +583,7 @@ function bindTeacher(){
 function openPresent(g){
   presentG=g;const sc=SCENES[g],num=g.slice(1);
   $("#presentBody").innerHTML=`<div class="row"><span class="badge" style="background:${GROUP_COLORS[g]}">${num}모둠</span><span class="scene-tag">${sc.tag} · ${esc(sc.topic)}</span><span class="space"></span><button class="btn sm ghost" id="pClose">닫기</button></div>
-    <h2 style="margin-top:14px">${sc.title}</h2><p class="story">${sc.story}</p>${groupSummary(g)}
+    <h2 style="margin-top:14px">${sc.title}</h2><img class="scene-img" src="${SCENE_IMG[g]}" alt="${esc(sc.tag)} 상황 그림" onerror="this.remove()"><p class="story">${sc.story}</p>${groupSummary(g)}
     ${S.control.reveal?`<div class="explain" style="font-size:19px"><h3>핵심</h3>${esc(sc.point)}</div>`:""}
     <div class="row" style="margin-top:18px">${["g1","g2","g3"].map((x,i)=>`<button class="btn sm ${x===g?"":"ghost"}" data-pg="${x}">${i+1}모둠</button>`).join("")}</div>`;
   $("#present").classList.add("on");
