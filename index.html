@@ -334,7 +334,7 @@ const QUIZ=[
 ];
 const blankGroup=()=>({sel:[],ev:[],line:"",help:[],submitted:false,quiz:[null,null,null,null,null],quizDone:false,cards:[{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""},{name:"",thought:"",right:"",how:""}]});
 const blankControl=()=>({phase:0,running:false,endsAt:0,remaining:PHASES[0].m*60000,reveal:false});
-const APP_VERSION="v1.9.2",APP_DATE="2026-11-11";
+const APP_VERSION="v1.9.3",APP_DATE="2026-11-11";
 const ROLES=[{id:"g1",n:"1모둠",c:"var(--g1)",k:"1"},{id:"g2",n:"2모둠",c:"var(--g2)",k:"2"},{id:"g3",n:"3모둠",c:"var(--g3)",k:"3"},{id:"teacher",n:"교사",c:"var(--ink)",k:"T"},{id:"present",n:"발표 화면(PPT)",c:"#B45309",k:"P"},{id:"observer",n:"참관 (보기 전용)",c:"#6B7280",k:"참"}];
 const ACCOUNTS=[{id:"g1",n:"1모둠"},{id:"g2",n:"2모둠"},{id:"g3",n:"3모둠"},{id:"observer",n:"참관 (보기 전용)"},{id:"present",n:"발표 화면(PPT)"},{id:"teacher",n:"교사 (나)"}];
 const canPresent=r=>r==="teacher"||r==="observer"||r==="present";
@@ -379,7 +379,7 @@ function applyRow(row,live){
   else if(row.id==="deck")S.deck=row.data||{};
   else if(S.groups[row.id]){
     if(live)S.upd[row.id]=Date.now(); // 방금 작성 중 표시용
-    if(S.role===row.id&&pending[row.id])return; // 내 기기에서 쓰는 중이면 덮어쓰지 않음
+    if(S.role===row.id){mergeOwn(row.id,row.data||{});return} // 내 모둠: 지금 저장 중인 칸만 내 값 유지
     S.groups[row.id]=Object.assign(blankGroup(),row.data||{});
   }
 }
@@ -447,6 +447,22 @@ async function pollState(){
 }
 setInterval(pollState,3000);
 setInterval(()=>{if(S.user)syncClock()},120000);
+/* 모둠 기록은 한 칸(항목)씩 서버에서 바꿈 → 한 모둠이 여러 기기로 동시에 눌러도 서로 지우지 않음 */
+const opPend={};let lineTimer=null;
+function mergeOwn(g,d){
+  const cur=S.groups[g],nx=Object.assign(blankGroup(),d||{});
+  for(const k in opPend)if(opPend[k]>0)nx[k]=cur[k];
+  if(lineTimer)nx.line=cur.line;
+  S.groups[g]=nx;
+}
+async function gop(g,op,k,val){
+  if(DEMO){saveDemo();return}
+  opPend[k]=(opPend[k]||0)+1;
+  const {data,error}=await sb.rpc("harin_group_op",{gid:g,op,k,val});
+  opPend[k]--;
+  if(error){toast("저장하지 못했어요: "+error.message);return}
+  mergeOwn(g,data);render(true);
+}
 const pending={},timers={},saveSeq={};
 function save(id,delay){
   if(DEMO){saveDemo();return}
@@ -618,16 +634,15 @@ function groupHTML(g){
 }
 function bindGroup(g){
   const gs=S.groups[g];
-  const touch=()=>save(g);
   document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{VIEW.step=+b.dataset.step;render();window.scrollTo({top:0,behavior:"smooth"})});
-  document.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{const id=b.dataset.sel;gs.sel=gs.sel.includes(id)?gs.sel.filter(x=>x!==id):[...gs.sel,id];touch();render()});
-  document.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>{const id=b.dataset.ev;gs.ev=gs.ev.includes(id)?gs.ev.filter(x=>x!==id):[...gs.ev,id];touch();render()});
-  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{const id=b.dataset.help;gs.help=gs.help.includes(id)?gs.help.filter(x=>x!==id):[...gs.help,id];touch();render()});
-  const ta=$("#line");if(ta)ta.oninput=()=>{gs.line=ta.value;touch()};
-  const sbm=$("#submit");if(sbm)sbm.onclick=()=>{if(!gs.line.trim()){toast("하린의 대사를 먼저 써 주세요");return}gs.submitted=true;touch();render();toast("제출했어요")};
-  const us=$("#unsubmit");if(us)us.onclick=()=>{gs.submitted=false;touch();render()};
-  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{gs.quiz[+b.dataset.q]=+b.dataset.o;touch();render()});
-  const qs=$("#qsubmit");if(qs)qs.onclick=()=>{gs.quizDone=true;touch();render()};
+  document.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{const id=b.dataset.sel;const on=gs.sel.includes(id);gs.sel=on?gs.sel.filter(x=>x!==id):[...gs.sel,id];gop(g,on?"del":"add","sel",id);render()});
+  document.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>{const id=b.dataset.ev;const on=gs.ev.includes(id);gs.ev=on?gs.ev.filter(x=>x!==id):[...gs.ev,id];gop(g,on?"del":"add","ev",id);render()});
+  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{const id=b.dataset.help;const on=gs.help.includes(id);gs.help=on?gs.help.filter(x=>x!==id):[...gs.help,id];gop(g,on?"del":"add","help",id);render()});
+  const ta=$("#line");if(ta)ta.oninput=()=>{gs.line=ta.value;clearTimeout(lineTimer);lineTimer=setTimeout(()=>{lineTimer=null;gop(g,"set","line",S.groups[g].line)},600);if(DEMO)saveDemo()};
+  const sbm=$("#submit");if(sbm)sbm.onclick=()=>{if(!gs.line.trim()){toast("하린의 대사를 먼저 써 주세요");return}clearTimeout(lineTimer);lineTimer=null;gs.submitted=true;gop(g,"set","line",gs.line).then(()=>gop(g,"set","submitted",true));render();toast("제출했어요")};
+  const us=$("#unsubmit");if(us)us.onclick=()=>{gs.submitted=false;gop(g,"set","submitted",false);render()};
+  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const i=+b.dataset.q,v=+b.dataset.o;gs.quiz[i]=v;gop(g,"idx","quiz",{i,v});render()});
+  const qs=$("#qsubmit");if(qs)qs.onclick=()=>{gs.quizDone=true;gop(g,"set","quizDone",true);render()};
   document.querySelectorAll("[data-cd]").forEach(inp=>inp.oninput=()=>{CARD_DRAFT[inp.dataset.cd]=inp.value});
   const cs=$("#cardSave");if(cs)cs.onclick=async()=>{
     const d=CARD_DRAFT;

@@ -93,3 +93,30 @@ create or replace function public.harin_now() returns bigint
 language sql stable set search_path = '' as $$ select (extract(epoch from clock_timestamp())*1000)::bigint $$;
 revoke all on function public.harin_now() from public;
 grant execute on function public.harin_now() to authenticated;
+
+-- v1.9.3 · 모둠 기록을 한 칸씩 서버에서 바꿈 (한 모둠이 여러 기기로 동시에 입력해도 서로 지우지 않음)
+create or replace function public.harin_group_op(gid text, op text, k text, val jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare em text := (select auth.jwt() ->> 'email'); d jsonb;
+begin
+  if gid not in ('g1','g2','g3') then raise exception 'bad group'; end if;
+  if em is distinct from gid || '@harin.example.com' and em is distinct from 'teacher@harin.example.com' then raise exception 'not allowed'; end if;
+  if k not in ('sel','ev','help','line','submitted','quiz','quizDone') then raise exception 'bad key'; end if;
+  select data into d from public.lesson_state where id = gid for update;
+  if d is null then d := '{}'::jsonb; end if;
+  if op = 'set' then d := jsonb_set(d, array[k], val, true);
+  elsif op = 'add' then
+    if not coalesce(d->k, '[]'::jsonb) @> jsonb_build_array(val) then
+      d := jsonb_set(d, array[k], coalesce(d->k, '[]'::jsonb) || jsonb_build_array(val), true);
+    end if;
+  elsif op = 'del' then
+    d := jsonb_set(d, array[k], coalesce((select jsonb_agg(e) from jsonb_array_elements(coalesce(d->k,'[]'::jsonb)) e where e <> val), '[]'::jsonb), true);
+  elsif op = 'idx' then
+    d := jsonb_set(d, array[k], coalesce(d->k, '[null,null,null,null,null]'::jsonb), true);
+    d := jsonb_set(d, array[k, (val->>'i')], val->'v', false);
+  else raise exception 'bad op'; end if;
+  update public.lesson_state set data = d, updated_at = now() where id = gid;
+  return d;
+end $$;
+revoke all on function public.harin_group_op(text,text,text,jsonb) from public;
+grant execute on function public.harin_group_op(text,text,text,jsonb) to authenticated;
